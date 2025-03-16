@@ -7,12 +7,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type Role string
+
+const (
+	RoleUser            Role = "USER"
+	RoleAdmin           Role = "ADMIN"
+	RoleInternalService Role = "INTERNAL_SERVICE"
+)
+
 type User struct {
 	ID            uuid.UUID `gorm:"primaryKey;not null" json:"id"`
 	Name          string    `gorm:"not null" json:"name"`
 	Email         string    `gorm:"uniqueIndex;not null" json:"email"`
 	Password      string    `gorm:"not null" json:"-"`
-	Role          string    `gorm:"default:user;not null" json:"role"`
+	Role          Role      `gorm:"default:USER;not null" json:"role"`
 	VerifiedEmail bool      `gorm:"default:false;not null" json:"verified_email"`
 	CreatedAt     time.Time `gorm:"autoCreateTime:milli" json:"-"`
 	UpdatedAt     time.Time `gorm:"autoCreateTime:milli;autoUpdateTime:milli" json:"-"`

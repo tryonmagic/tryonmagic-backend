@@ -17,6 +17,7 @@ var (
 	DBPort              int
 	JWTSecret           string
 	JWTAccessExp        int
+	JWTInternalExp      int
 	JWTRefreshExp       int
 	JWTResetPasswordExp int
 	JWTVerifyEmailExp   int
@@ -48,6 +49,7 @@ func init() {
 	// jwt configuration
 	JWTSecret = viper.GetString("JWT_SECRET")
 	JWTAccessExp = viper.GetInt("JWT_ACCESS_EXP_MINUTES")
+	JWTInternalExp = viper.GetInt("JWT_INTERNAL_ACCESS_EXP_DAYS")
 	JWTRefreshExp = viper.GetInt("JWT_REFRESH_EXP_DAYS")
 	JWTResetPasswordExp = viper.GetInt("JWT_RESET_PASSWORD_EXP_MINUTES")
 	JWTVerifyEmailExp = viper.GetInt("JWT_VERIFY_EMAIL_EXP_MINUTES")

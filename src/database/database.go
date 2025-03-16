@@ -13,9 +13,10 @@ import (
 
 func Connect(dbHost, dbName string) *gorm.DB {
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Shanghai",
+		"host=%s user=%s password=%s dbname=%s port=%d sslmode=require",
 		dbHost, config.DBUser, config.DBPassword, dbName, config.DBPort,
 	)
+	fmt.Println(dsn)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger:                 logger.Default.LogMode(logger.Info),
@@ -23,6 +24,7 @@ func Connect(dbHost, dbName string) *gorm.DB {
 		PrepareStmt:            true,
 		TranslateError:         true,
 	})
+	fmt.Println("Connected to database")
 	if err != nil {
 		utils.Log.Errorf("Failed to connect to database: %+v", err)
 	}

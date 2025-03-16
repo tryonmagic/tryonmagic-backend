@@ -124,6 +124,12 @@ func (s *tokenService) GetTokenByUserID(c *fiber.Ctx, tokenStr string) (*model.T
 
 func (s *tokenService) GenerateAuthTokens(c *fiber.Ctx, user *model.User) (*res.Tokens, error) {
 	accessTokenExpires := time.Now().UTC().Add(time.Minute * time.Duration(config.JWTAccessExp))
+	s.Log.Infof("User role: %s", user.Role)
+	if user.Role == model.RoleInternalService {
+		accessTokenExpires = time.Now().UTC().Add(time.Hour * 24 * time.Duration(config.JWTInternalExp))
+		s.Log.Infof("Internal service, %s ,ex : %v", accessTokenExpires, config.JWTInternalExp)
+
+	}
 	accessToken, err := s.GenerateToken(user.ID.String(), accessTokenExpires, config.TokenTypeAccess)
 	if err != nil {
 		s.Log.Errorf("Failed generate token: %+v", err)
@@ -131,6 +137,9 @@ func (s *tokenService) GenerateAuthTokens(c *fiber.Ctx, user *model.User) (*res.
 	}
 
 	refreshTokenExpires := time.Now().UTC().Add(time.Hour * 24 * time.Duration(config.JWTRefreshExp))
+	if user.Role == model.RoleInternalService {
+		refreshTokenExpires = time.Now().UTC().Add(time.Hour * 24 * time.Duration(config.JWTInternalExp))
+	}
 	refreshToken, err := s.GenerateToken(user.ID.String(), refreshTokenExpires, config.TokenTypeRefresh)
 	if err != nil {
 		s.Log.Errorf("Failed generate token: %+v", err)

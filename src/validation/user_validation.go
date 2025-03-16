@@ -1,10 +1,12 @@
 package validation
 
+import "app/src/model"
+
 type CreateUser struct {
-	Name     string `json:"name" validate:"required,max=50" example:"fake name"`
-	Email    string `json:"email" validate:"required,email,max=50" example:"fake@example.com"`
-	Password string `json:"password" validate:"required,min=8,max=20,password" example:"password1"`
-	Role     string `json:"role" validate:"required,oneof=user admin,max=50" example:"user"`
+	Name     string     `json:"name" validate:"required,max=50" example:"fake name"`
+	Email    string     `json:"email" validate:"required,email,max=50" example:"fake@example.com"`
+	Password string     `json:"password" validate:"required,min=8,max=20,password" example:"password1"`
+	Role     model.Role `json:"role" validate:"required,oneof=user admin,max=50" example:"user"`
 }
 
 type UpdateUser struct {

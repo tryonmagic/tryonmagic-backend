@@ -48,6 +48,7 @@ func (a *AuthController) Register(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
+	print(req.Role)
 
 	user, err := a.AuthService.Register(c, req)
 	if err != nil {

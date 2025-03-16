@@ -44,7 +44,9 @@ func NewAuthService(
 }
 
 func (s *authService) Register(c *fiber.Ctx, req *validation.Register) (*model.User, error) {
+	s.Log.Info(req.Role)
 	if err := s.Validate.Struct(req); err != nil {
+		s.Log.Error(err)
 		return nil, err
 	}
 
@@ -58,6 +60,7 @@ func (s *authService) Register(c *fiber.Ctx, req *validation.Register) (*model.U
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: hashedPassword,
+		Role:     req.Role,
 	}
 
 	result := s.DB.WithContext(c.Context()).Create(user)

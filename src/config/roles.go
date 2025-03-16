@@ -1,17 +1,23 @@
 package config
 
-var allRoles = map[string][]string{
-	"user":  {},
-	"admin": {"getUsers", "manageUsers"},
+import (
+	// initialize the Swagger documentation
+	"app/src/model"
+)
+
+var allRoles = map[model.Role][]string{
+	model.RoleUser:            {},
+	model.RoleAdmin:           {"getUsers", "manageUsers"},
+	model.RoleInternalService: {},
 }
 
 var Roles = getKeys(allRoles)
 var RoleRights = allRoles
 
-func getKeys(m map[string][]string) []string {
+func getKeys(m map[model.Role][]string) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
-		keys = append(keys, k)
+		keys = append(keys, string(k))
 	}
 	return keys
 }

@@ -1,9 +1,12 @@
 package validation
 
+import "app/src/model"
+
 type Register struct {
-	Name     string `json:"name" validate:"required,max=50" example:"fake name"`
-	Email    string `json:"email" validate:"required,email,max=50" example:"fake@example.com"`
-	Password string `json:"password" validate:"required,min=8,max=20,password" example:"password1"`
+	Name     string     `json:"name" validate:"required,max=50" example:"fake name"`
+	Email    string     `json:"email" validate:"required,email,max=50" example:"fake@example.com"`
+	Password string     `json:"password" validate:"required,min=8,max=20,password" example:"password1"`
+	Role     model.Role `json:"role" validate:"required,oneof=USER ADMIN INTERNAL_SERVICE,max=50" example:"USER"`
 }
 
 type Login struct {
