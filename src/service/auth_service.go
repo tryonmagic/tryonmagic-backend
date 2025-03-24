@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type AuthService interface {
@@ -21,6 +22,7 @@ type AuthService interface {
 	RefreshAuth(c *fiber.Ctx, req *validation.RefreshToken) (*response.Tokens, error)
 	ResetPassword(c *fiber.Ctx, query *validation.Token, req *validation.UpdatePassOrVerify) error
 	VerifyEmail(c *fiber.Ctx, query *validation.Token) error
+	StoreShopifyToken(c *fiber.Ctx, payload *validation.StoreShopifyToken) (*model.User, error)
 }
 
 type authService struct {
@@ -57,10 +59,11 @@ func (s *authService) Register(c *fiber.Ctx, req *validation.Register) (*model.U
 	}
 
 	user := &model.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: hashedPassword,
-		Role:     req.Role,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  hashedPassword,
+		Role:      req.Role,
 	}
 
 	result := s.DB.WithContext(c.Context()).Create(user)
@@ -176,7 +179,7 @@ func (s *authService) VerifyEmail(c *fiber.Ctx, query *validation.Token) error {
 	}
 
 	updateBody := &validation.UpdatePassOrVerify{
-		VerifiedEmail: true,
+		EmailVerified: true,
 	}
 
 	if errUpdate := s.UserService.UpdatePassOrVerify(c, updateBody, user.ID.String()); errUpdate != nil {
@@ -184,4 +187,95 @@ func (s *authService) VerifyEmail(c *fiber.Ctx, query *validation.Token) error {
 	}
 
 	return nil
+}
+
+func (s *authService) StoreShopifyToken(c *fiber.Ctx, payload *validation.StoreShopifyToken) (*model.User, error) {
+	if payload.OnlineAccessInfo != nil {
+		payloadAssociatedUser := payload.OnlineAccessInfo.AssociatedUser
+		hashedPassword, err := utils.HashPassword(payload.ID)
+		if err != nil {
+			s.Log.Errorf("Failed hash password: %+v", err)
+			return nil, err
+		}
+		user := model.User{
+			FirstName:     payloadAssociatedUser.FirstName,
+			LastName:      payloadAssociatedUser.LastName,
+			Email:         payloadAssociatedUser.Email,
+			Role:          model.RoleAdmin,
+			EmailVerified: payloadAssociatedUser.EmailVerified,
+			Password:      hashedPassword,
+		}
+		shopifySession := model.ShopifySession{
+			ID:          payload.ID,
+			AccessToken: payload.AccessToken,
+			Expires:     payload.Expires,
+			IsOnline:    payload.IsOnline,
+			Scope:       payload.Scope,
+			State:       payload.State,
+			APIKey:      config.ShopifyAPIKey,
+			Shop:        payload.Shop,
+		}
+		onlineAccessInfo := model.ShopifyOnlineAccessInfo{
+			ShopifySessionID:    payload.ID,
+			ExpiresIn:           payload.OnlineAccessInfo.ExpiresIn,
+			AssociatedUserScope: payload.OnlineAccessInfo.AssociatedUserScope,
+		}
+		associatedUser := model.ShopifyAssociatedUser{
+			ShopifyUserID: payloadAssociatedUser.ID,
+			FirstName:     payloadAssociatedUser.FirstName,
+			LastName:      payloadAssociatedUser.LastName,
+			Email:         payloadAssociatedUser.Email,
+			AccountOwner:  payloadAssociatedUser.AccountOwner,
+			Locale:        payloadAssociatedUser.Locale,
+			Collaborator:  payloadAssociatedUser.Collaborator,
+			EmailVerified: payloadAssociatedUser.EmailVerified,
+		}
+
+		err = s.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Clauses(clause.Returning{}, clause.OnConflict{
+				Columns:   []clause.Column{{Name: "email"}},
+				DoUpdates: clause.AssignmentColumns([]string{"first_name", "last_name", "email", "email_verified", "updated_at"}),
+			}).Create(&user).Error; err != nil {
+				s.Log.Errorf("Failed to store user: %+v", err)
+				return err
+			}
+			s.Log.Infof("User ID: %s", user.ID)
+			shopifySession.UserID = user.ID
+			if err := tx.Clauses(clause.Returning{}, clause.OnConflict{
+				Columns:   []clause.Column{{Name: "id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"access_token", "expires", "is_online", "scope", "state", "api_key", "shop", "updated_at"}),
+			}).Create(&shopifySession).Error; err != nil {
+				s.Log.Errorf("Failed to store shopify session: %+v", err)
+				return err
+			}
+			if err := tx.Clauses(clause.Returning{}, clause.OnConflict{
+				Columns:   []clause.Column{{Name: "shopify_session_id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"expires_in", "associated_user_scope", "updated_at"}),
+			}).Create(&onlineAccessInfo).Error; err != nil {
+				s.Log.Errorf("Failed to store online access info: %+v", err)
+				return err
+			}
+
+			associatedUser.OnlineAccessInfoID = &onlineAccessInfo.ID
+			s.Log.Infof("Associated User: %v", associatedUser)
+			if err := tx.Clauses(clause.Returning{}, clause.OnConflict{
+				Columns:   []clause.Column{{Name: "online_access_info_id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"shopify_user_id", "first_name", "last_name", "email", "account_owner", "locale", "collaborator", "email_verified", "updated_at"}),
+			}).Create(&associatedUser).Error; err != nil {
+				s.Log.Errorf("Failed to store associated user: %+v", err)
+				return err
+			}
+
+			// return nil will commit the whole transaction
+			return nil
+		})
+
+		if err != nil {
+			s.Log.Errorf("Failed to store shopify token: %+v", err)
+			return nil, err
+		}
+		return &user, nil
+	}
+
+	return nil, fiber.NewError(fiber.StatusBadRequest, "Online access info not found!")
 }

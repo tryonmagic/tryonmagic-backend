@@ -112,10 +112,11 @@ func (s *userService) CreateUser(c *fiber.Ctx, req *validation.CreateUser) (*mod
 	}
 
 	user := &model.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: hashedPassword,
-		Role:     req.Role,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  hashedPassword,
+		Role:      req.Role,
 	}
 
 	result := s.DB.WithContext(c.Context()).Create(user)
@@ -136,7 +137,7 @@ func (s *userService) UpdateUser(c *fiber.Ctx, req *validation.UpdateUser, id st
 		return nil, err
 	}
 
-	if req.Email == "" && req.Name == "" && req.Password == "" {
+	if req.Email == "" && req.FirstName == "" && req.Password == "" {
 		return nil, fiber.NewError(fiber.StatusBadRequest, "Invalid Request")
 	}
 
@@ -149,9 +150,10 @@ func (s *userService) UpdateUser(c *fiber.Ctx, req *validation.UpdateUser, id st
 	}
 
 	updateBody := &model.User{
-		Name:     req.Name,
-		Password: req.Password,
-		Email:    req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Password:  req.Password,
+		Email:     req.Email,
 	}
 
 	result := s.DB.WithContext(c.Context()).Where("id = ?", id).Updates(updateBody)
@@ -181,7 +183,7 @@ func (s *userService) UpdatePassOrVerify(c *fiber.Ctx, req *validation.UpdatePas
 		return err
 	}
 
-	if req.Password == "" && !req.VerifiedEmail {
+	if req.Password == "" && !req.EmailVerified {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid Request")
 	}
 
@@ -195,7 +197,7 @@ func (s *userService) UpdatePassOrVerify(c *fiber.Ctx, req *validation.UpdatePas
 
 	updateBody := &model.User{
 		Password:      req.Password,
-		VerifiedEmail: req.VerifiedEmail,
+		EmailVerified: req.EmailVerified,
 	}
 
 	result := s.DB.WithContext(c.Context()).Where("id = ?", id).Updates(updateBody)
@@ -236,9 +238,10 @@ func (s *userService) CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin
 	if err != nil {
 		if err.Error() == "User not found" {
 			user := &model.User{
-				Name:          req.Name,
+				FirstName:     req.FirstName,
+				LastName:      req.LastName,
 				Email:         req.Email,
-				VerifiedEmail: req.VerifiedEmail,
+				EmailVerified: req.EmailVerified,
 			}
 
 			if createErr := s.DB.WithContext(c.Context()).Create(user).Error; createErr != nil {
@@ -252,7 +255,7 @@ func (s *userService) CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin
 		return nil, err
 	}
 
-	userFromDB.VerifiedEmail = req.VerifiedEmail
+	userFromDB.EmailVerified = req.EmailVerified
 	if updateErr := s.DB.WithContext(c.Context()).Save(userFromDB).Error; updateErr != nil {
 		s.Log.Errorf("Failed to update user: %+v", updateErr)
 		return nil, updateErr

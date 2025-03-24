@@ -1,5 +1,13 @@
 package example
 
+type Data interface{}
+
+type GenericResponse struct {
+	Code    int    `json:"code" example:"201"`
+	Status  string `json:"status" example:"success"`
+	Message string `json:"message" example:"Register successfully"`
+	Data    Data   `json:"data"`
+}
 type RegisterResponse struct {
 	Code    int    `json:"code" example:"201"`
 	Status  string `json:"status" example:"success"`
