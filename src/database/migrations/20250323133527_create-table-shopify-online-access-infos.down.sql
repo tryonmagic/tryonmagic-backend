@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS shopify_online_access_infos;

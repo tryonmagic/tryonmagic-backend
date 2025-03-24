@@ -14,10 +14,10 @@ var validate = validation.Validator()
 func TestUserModel(t *testing.T) {
 	t.Run("Create user validation", func(t *testing.T) {
 		var newUser = validation.CreateUser{
-			Name:     "John Doe",
-			Email:    "johndoe@gmail.com",
-			Password: "password1",
-			Role:     "user",
+			FirstName: "John Doe",
+			Email:     "johndoe@gmail.com",
+			Password:  "password1",
+			Role:      "user",
 		}
 
 		t.Run("should correctly validate a valid user", func(t *testing.T) {
@@ -58,9 +58,9 @@ func TestUserModel(t *testing.T) {
 
 	t.Run("Update user validation", func(t *testing.T) {
 		var updateUser = validation.UpdateUser{
-			Name:     "John Doe",
-			Email:    "johndoe@gmail.com",
-			Password: "password1",
+			FirstName: "John Doe",
+			Email:     "johndoe@gmail.com",
+			Password:  "password1",
 		}
 
 		t.Run("should correctly validate a valid user", func(t *testing.T) {
@@ -125,10 +125,11 @@ func TestUserModel(t *testing.T) {
 	t.Run("User toJSON()", func(t *testing.T) {
 		t.Run("should not return user password when toJSON is called", func(t *testing.T) {
 			user := &model.User{
-				Name:     "John Doe",
-				Email:    "johndoe@gmail.com",
-				Password: "password1",
-				Role:     "user",
+				FirstName: "John",
+				LastName:  "Doe",
+				Email:     "johndoe@gmail.com",
+				Password:  "password1",
+				Role:      "user",
 			}
 
 			bytes, _ := json.Marshal(user)
