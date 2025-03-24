@@ -10,10 +10,6 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
-        "license": {
-            "name": "MIT",
-            "url": "https://github.com/indrayyana/go-fiber-boilerplate/blob/main/LICENSE"
-        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -304,6 +300,45 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/example.Unauthorized"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/store-shopify-token": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Store Shopify token",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/validation.StoreShopifyToken"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/example.GenericResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Email already taken",
+                        "schema": {
+                            "$ref": "#/definitions/example.DuplicateEmail"
                         }
                     }
                 }
@@ -791,6 +826,24 @@ const docTemplate = `{
                 }
             }
         },
+        "example.GenericResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 201
+                },
+                "data": {},
+                "message": {
+                    "type": "string",
+                    "example": "Register successfully"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
         "example.GetAllUserResponse": {
             "type": "object",
             "properties": {
@@ -1232,11 +1285,25 @@ const docTemplate = `{
                 }
             }
         },
+        "model.Role": {
+            "type": "string",
+            "enum": [
+                "USER",
+                "ADMIN",
+                "INTERNAL_SERVICE"
+            ],
+            "x-enum-varnames": [
+                "RoleUser",
+                "RoleAdmin",
+                "RoleInternalService"
+            ]
+        },
         "validation.CreateUser": {
             "type": "object",
             "required": [
                 "email",
-                "name",
+                "firstName",
+                "lastName",
                 "password",
                 "role"
             ],
@@ -1246,7 +1313,12 @@ const docTemplate = `{
                     "maxLength": 50,
                     "example": "fake@example.com"
                 },
-                "name": {
+                "firstName": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "fake name"
+                },
+                "lastName": {
                     "type": "string",
                     "maxLength": 50,
                     "example": "fake name"
@@ -1258,11 +1330,15 @@ const docTemplate = `{
                     "example": "password1"
                 },
                 "role": {
-                    "type": "string",
                     "maxLength": 50,
                     "enum": [
                         "user",
                         "admin"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Role"
+                        }
                     ],
                     "example": "user"
                 }
@@ -1301,11 +1377,41 @@ const docTemplate = `{
                 }
             }
         },
+        "validation.OnlineAccessUser": {
+            "type": "object",
+            "properties": {
+                "account_owner": {
+                    "type": "boolean"
+                },
+                "collaborator": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "email_verified": {
+                    "type": "boolean"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "locale": {
+                    "type": "string"
+                }
+            }
+        },
         "validation.Register": {
             "type": "object",
             "required": [
                 "email",
-                "name",
+                "firstName",
+                "lastName",
                 "password",
                 "role"
             ],
@@ -1315,7 +1421,12 @@ const docTemplate = `{
                     "maxLength": 50,
                     "example": "fake@example.com"
                 },
-                "name": {
+                "firstName": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "fake name"
+                },
+                "lastName": {
                     "type": "string",
                     "maxLength": 50,
                     "example": "fake name"
@@ -1327,16 +1438,73 @@ const docTemplate = `{
                     "example": "password1"
                 },
                 "role": {
-                    "type": "string",
                     "maxLength": 50,
                     "enum": [
                         "USER",
                         "ADMIN",
                         "INTERNAL_SERVICE"
                     ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Role"
+                        }
+                    ],
                     "example": "USER"
                 }
-
+            }
+        },
+        "validation.ShopifyOnlineAccessInfo": {
+            "type": "object",
+            "required": [
+                "associated_user",
+                "associated_user_scope",
+                "expires_in"
+            ],
+            "properties": {
+                "associated_user": {
+                    "$ref": "#/definitions/validation.OnlineAccessUser"
+                },
+                "associated_user_scope": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                }
+            }
+        },
+        "validation.StoreShopifyToken": {
+            "type": "object",
+            "required": [
+                "id",
+                "isOnline",
+                "shop",
+                "state"
+            ],
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "expires": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isOnline": {
+                    "type": "boolean"
+                },
+                "onlineAccessInfo": {
+                    "$ref": "#/definitions/validation.ShopifyOnlineAccessInfo"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "shop": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
             }
         },
         "validation.UpdatePassOrVerify": {
@@ -1358,7 +1526,12 @@ const docTemplate = `{
                     "maxLength": 50,
                     "example": "fake@example.com"
                 },
-                "name": {
+                "firstName": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "fake name"
+                },
+                "lastName": {
                     "type": "string",
                     "maxLength": 50,
                     "example": "fake name"
@@ -1371,14 +1544,6 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Example Value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
@@ -1388,7 +1553,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8000",
 	BasePath:         "/v1",
 	Schemes:          []string{},
-	Title:            "go-fiber-boilerplate API documentation",
+	Title:            "ProdigyAI API documentation",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
