@@ -3,10 +3,13 @@ package service
 import (
 	"app/src/config"
 	"app/src/model"
+	"app/src/pkg/shopify"
 	"app/src/response"
 	"app/src/utils"
 	"app/src/validation"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +25,7 @@ type AuthService interface {
 	RefreshAuth(c *fiber.Ctx, req *validation.RefreshToken) (*response.Tokens, error)
 	ResetPassword(c *fiber.Ctx, query *validation.Token, req *validation.UpdatePassOrVerify) error
 	VerifyEmail(c *fiber.Ctx, query *validation.Token) error
-	StoreShopifyToken(c *fiber.Ctx, payload *validation.StoreShopifyToken) (*model.User, error)
+	ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, store bool) (*model.User, error)
 }
 
 type authService struct {
@@ -189,46 +192,61 @@ func (s *authService) VerifyEmail(c *fiber.Ctx, query *validation.Token) error {
 	return nil
 }
 
-func (s *authService) StoreShopifyToken(c *fiber.Ctx, payload *validation.StoreShopifyToken) (*model.User, error) {
-	if payload.OnlineAccessInfo != nil {
-		payloadAssociatedUser := payload.OnlineAccessInfo.AssociatedUser
-		hashedPassword, err := utils.HashPassword(payload.ID)
+func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, store bool) (*model.User, error) {
+	val, err := utils.DecodeJWTToken(payload.SessionToken, "")
+	if err != nil {
+		fmt.Printf("Error decoding token: %v", err)
+	}
+	dest := val["dest"].(string)
+	shop := strings.Replace(dest, "https://", "", 1)
+
+	session, err := shopify.TokenExchange(shop, payload.SessionToken)
+	if err != nil {
+		s.Log.Errorf("Error exchanging token: %v", err)
+		return nil, err
+	}
+	if !store {
+		return nil, nil
+	}
+	if session.OnlineAccessInfo != nil {
+		sessionAssociatedUser := session.OnlineAccessInfo.AssociatedUser
+		hashedPassword, err := utils.HashPassword(session.ID)
 		if err != nil {
 			s.Log.Errorf("Failed hash password: %+v", err)
 			return nil, err
 		}
 		user := model.User{
-			FirstName:     payloadAssociatedUser.FirstName,
-			LastName:      payloadAssociatedUser.LastName,
-			Email:         payloadAssociatedUser.Email,
+			FirstName:     sessionAssociatedUser.FirstName,
+			LastName:      sessionAssociatedUser.LastName,
+			Email:         sessionAssociatedUser.Email,
 			Role:          model.RoleAdmin,
-			EmailVerified: payloadAssociatedUser.EmailVerified,
+			EmailVerified: sessionAssociatedUser.EmailVerified,
 			Password:      hashedPassword,
 		}
 		shopifySession := model.ShopifySession{
-			ID:          payload.ID,
-			AccessToken: payload.AccessToken,
-			Expires:     payload.Expires,
-			IsOnline:    payload.IsOnline,
-			Scope:       payload.Scope,
-			State:       payload.State,
+			ID:          session.ID,
+			AccessToken: session.AccessToken,
+			Expires:     &session.Expires,
+			IsOnline:    session.IsOnline,
+			Scope:       session.Scope,
+			State:       session.State,
 			APIKey:      config.ShopifyAPIKey,
-			Shop:        payload.Shop,
+			Shop:        session.Shop,
 		}
 		onlineAccessInfo := model.ShopifyOnlineAccessInfo{
-			ShopifySessionID:    payload.ID,
-			ExpiresIn:           payload.OnlineAccessInfo.ExpiresIn,
-			AssociatedUserScope: payload.OnlineAccessInfo.AssociatedUserScope,
+			ShopifySessionID:    session.ID,
+			ExpiresIn:           session.OnlineAccessInfo.ExpiresIn,
+			AssociatedUserScope: session.OnlineAccessInfo.AssociatedUserScope,
 		}
 		associatedUser := model.ShopifyAssociatedUser{
-			ShopifyUserID: payloadAssociatedUser.ID,
-			FirstName:     payloadAssociatedUser.FirstName,
-			LastName:      payloadAssociatedUser.LastName,
-			Email:         payloadAssociatedUser.Email,
-			AccountOwner:  payloadAssociatedUser.AccountOwner,
-			Locale:        payloadAssociatedUser.Locale,
-			Collaborator:  payloadAssociatedUser.Collaborator,
-			EmailVerified: payloadAssociatedUser.EmailVerified,
+			ShopifyUserID: sessionAssociatedUser.ID,
+			FirstName:     sessionAssociatedUser.FirstName,
+			LastName:      sessionAssociatedUser.LastName,
+			Email:         sessionAssociatedUser.Email,
+			AccountOwner:  sessionAssociatedUser.AccountOwner,
+			Locale:        sessionAssociatedUser.Locale,
+			Collaborator:  sessionAssociatedUser.Collaborator,
+			EmailVerified: sessionAssociatedUser.EmailVerified,
 		}
 
 		err = s.DB.Transaction(func(tx *gorm.DB) error {

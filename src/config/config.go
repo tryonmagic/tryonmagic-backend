@@ -30,6 +30,8 @@ var (
 	GoogleClientSecret  string
 	RedirectURL         string
 	ShopifyAPIKey       string
+	ShopifyAPISecret    string
+	ShopifyAPPScopes    string
 )
 
 func init() {
@@ -67,6 +69,8 @@ func init() {
 	GoogleClientSecret = viper.GetString("GOOGLE_CLIENT_SECRET")
 	RedirectURL = viper.GetString("REDIRECT_URL")
 	ShopifyAPIKey = viper.GetString("SHOPIFY_API_KEY")
+	ShopifyAPISecret = viper.GetString("SHOPIFY_API_SECRET")
+	ShopifyAPPScopes = viper.GetString("SHOPIFY_APP_SCOPES")
 }
 
 func loadConfig() {

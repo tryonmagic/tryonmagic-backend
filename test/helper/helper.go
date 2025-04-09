@@ -39,9 +39,9 @@ func CreateUser(db *gorm.DB, email, password, name string) {
 	}
 
 	user := &model.User{
-		Email:    email,
-		Password: hashedPassword,
-		Name:     name,
+		Email:     email,
+		Password:  hashedPassword,
+		FirstName: name,
 	}
 
 	err = db.Create(user).Error

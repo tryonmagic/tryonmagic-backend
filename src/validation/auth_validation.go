@@ -2,7 +2,6 @@ package validation
 
 import (
 	"app/src/model"
-	"time"
 )
 
 type Register struct {
@@ -26,11 +25,11 @@ type GoogleLogin struct {
 }
 
 type Logout struct {
-	RefreshToken string `json:"refresh_token" validate:"required,max=255"`
+	RefreshToken string `json:"refreshToken" validate:"required,max=255"`
 }
 
 type RefreshToken struct {
-	RefreshToken string `json:"refresh_token" validate:"required,max=255"`
+	RefreshToken string `json:"refreshToken" validate:"required,max=255"`
 }
 
 type ForgotPassword struct {
@@ -41,30 +40,6 @@ type Token struct {
 	Token string `json:"token" validate:"required,max=255"`
 }
 
-type OnlineAccessUser struct {
-	ID            int64  `json:"id"`
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	AccountOwner  bool   `json:"account_owner"`
-	Locale        string `json:"locale"`
-	Collaborator  bool   `json:"collaborator"`
-}
-
-type ShopifyOnlineAccessInfo struct {
-	ExpiresIn           int              `json:"expires_in" validate:"required"`
-	AssociatedUserScope string           `json:"associated_user_scope" validate:"required"`
-	AssociatedUser      OnlineAccessUser `json:"associated_user" validate:"required"`
-}
-
-type StoreShopifyToken struct {
-	ID               string                   `json:"id" validate:"required"`
-	Shop             string                   `json:"shop" validate:"required"`
-	State            string                   `json:"state" validate:"required"`
-	IsOnline         bool                     `json:"isOnline" validate:"required"`
-	Scope            *string                  `json:"scope"`
-	Expires          *time.Time               `json:"expires"`
-	AccessToken      *string                  `json:"accessToken"`
-	OnlineAccessInfo *ShopifyOnlineAccessInfo `json:"onlineAccessInfo"`
+type ShopifyAuth struct {
+	SessionToken string `json:"sessionToken" validate:"required"`
 }

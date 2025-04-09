@@ -32,3 +32,43 @@ func VerifyToken(tokenStr, secret, tokenType string) (string, error) {
 
 	return userID, nil
 }
+
+func DecodeJWTToken(tokenStr string, secret string) (jwt.MapClaims, error) {
+	if secret == "" {
+		return parseJWTToken(tokenStr)
+	}
+	token, err := jwt.Parse(tokenStr, func(_ *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+
+	if err != nil || !token.Valid {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	return claims, nil
+}
+
+func parseJWTToken(tokenStr string) (jwt.MapClaims, error) {
+	// Parse the token without verifying the signature
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenStr, jwt.MapClaims{})
+	if err != nil {
+		return nil, errors.New("failed to decode token")
+	}
+
+	// Extract claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	return claims, nil
+}
+
+func VerifyShopifyToken() {
+
+}
