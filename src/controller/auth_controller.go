@@ -367,33 +367,26 @@ func (a *AuthController) GoogleCallback(c *fiber.Ctx) error {
 // @Summary      Store Shopify token
 // @Accept       json
 // @Produce      json
-// @Param        request  body  validation.StoreShopifyToken  true  "Request body"
+// @Param        request  body  validation.ShopifyAuth  true  "Request body"
 // @Router       /auth/store-shopify-token [post]
 // @Success      201  {object}  example.GenericResponse
 // @Failure      409  {object}  example.DuplicateEmail  "Email already taken"
-func (a *AuthController) StoreShopifyToken(c *fiber.Ctx) error {
-	req := new(validation.StoreShopifyToken)
+func (a *AuthController) ShopifyAuth(c *fiber.Ctx) error {
+	req := new(validation.ShopifyAuth)
 
 	if err := c.BodyParser(req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	user, err := a.AuthService.StoreShopifyToken(c, req)
-	if err != nil {
-		return err
-	}
-
-	tokens, err := a.TokenService.GenerateAuthTokens(c, user)
+	_, err := a.AuthService.ShopifyAuth(c, req, true)
 	if err != nil {
 		return err
 	}
 
 	return c.Status(fiber.StatusOK).
-		JSON(response.SuccessWithTokens{
+		JSON(response.Common{
 			Code:    fiber.StatusOK,
 			Status:  "success",
-			Message: "Register successfully",
-			User:    *user,
-			Tokens:  *tokens,
+			Message: "Authenticate successfully",
 		})
 }

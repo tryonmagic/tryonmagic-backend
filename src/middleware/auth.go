@@ -2,29 +2,63 @@ package middleware
 
 import (
 	"app/src/config"
+	"app/src/model"
 	"app/src/service"
 	"app/src/utils"
+	"app/src/validation"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func Auth(userService service.UserService, requiredRights ...string) fiber.Handler {
+func verifyShopifyAuth(c *fiber.Ctx, authService service.AuthService, token string) (*model.User, error) {
+
+	if token == "" {
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+	}
+
+	user, err := authService.ShopifyAuth(c, &validation.ShopifyAuth{
+		SessionToken: token,
+	}, true)
+	if err != nil || user == nil {
+		utils.Log.Errorf("Failed to verify shopify auth: %+v", err)
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+	}
+
+	return user, nil
+
+}
+func Auth(authService service.AuthService, userService service.UserService, requiredRights ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		authHeader := c.Get("Authorization")
+		authHeader := c.Get("x-shopify-session-token")
 		token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+		var user *model.User = nil
+		if token != "" {
+			_user, err := verifyShopifyAuth(c, authService, token)
+			if err != nil {
+				return err
+			}
+			user = _user
+		} else {
+			authHeader = c.Get("Authorization")
+			token = strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 
-		if token == "" {
-			return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+			if token == "" {
+				return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+			}
+
+			userID, err := utils.VerifyToken(token, config.JWTSecret, config.TokenTypeAccess)
+			if err != nil {
+				return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+			}
+
+			_user, err := userService.GetUserByID(c, userID)
+			if err != nil {
+				return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+			}
+			user = _user
 		}
-
-		userID, err := utils.VerifyToken(token, config.JWTSecret, config.TokenTypeAccess)
-		if err != nil {
-			return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
-		}
-
-		user, err := userService.GetUserByID(c, userID)
-		if err != nil || user == nil {
+		if user == nil {
 			return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
 		}
 
@@ -32,7 +66,7 @@ func Auth(userService service.UserService, requiredRights ...string) fiber.Handl
 
 		if len(requiredRights) > 0 {
 			userRights, hasRights := config.RoleRights[user.Role]
-			if (!hasRights || !hasAllRights(userRights, requiredRights)) && c.Params("userId") != userID {
+			if (!hasRights || !hasAllRights(userRights, requiredRights)) && c.Params("userId") != user.ID.String() {
 				return fiber.NewError(fiber.StatusForbidden, "You don't have permission to access this resource")
 			}
 		}

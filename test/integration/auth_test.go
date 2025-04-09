@@ -23,9 +23,9 @@ import (
 func TestAuthRoutes(t *testing.T) {
 	t.Run("POST /v1/auth/register", func(t *testing.T) {
 		var requestBody = validation.Register{
-			Name:     "Test",
-			Email:    "test@gmail.com",
-			Password: "password1",
+			FirstName: "Test",
+			Email:     "test@gmail.com",
+			Password:  "password1",
 		}
 
 		t.Run("should return 201 and successfully register user if request data is ok", func(t *testing.T) {
@@ -53,10 +53,10 @@ func TestAuthRoutes(t *testing.T) {
 			assert.Equal(t, "success", responseBody.Status)
 			assert.NotContains(t, string(bytes), "password")
 			assert.NotNil(t, responseBody.User.ID)
-			assert.Equal(t, requestBody.Name, responseBody.User.Name)
+			assert.Equal(t, requestBody.FirstName, responseBody.User.FirstName)
 			assert.Equal(t, requestBody.Email, responseBody.User.Email)
 			assert.Equal(t, "user", responseBody.User.Role)
-			assert.Equal(t, false, responseBody.User.VerifiedEmail)
+			assert.Equal(t, false, responseBody.User.EmailVerified)
 			assert.NotNil(t, responseBody.Tokens.Access.Token)
 			assert.NotNil(t, responseBody.Tokens.Refresh.Token)
 
@@ -65,10 +65,10 @@ func TestAuthRoutes(t *testing.T) {
 
 			assert.NotNil(t, user)
 			assert.NotEqual(t, user.Password, requestBody.Password)
-			assert.Equal(t, user.Name, requestBody.Name)
+			assert.Equal(t, user.FirstName, requestBody.FirstName)
 			assert.Equal(t, user.Email, requestBody.Email)
 			assert.Equal(t, user.Role, "user")
-			assert.Equal(t, user.VerifiedEmail, false)
+			assert.Equal(t, user.EmailVerified, false)
 		})
 
 		t.Run("should return 400 error if email is invalid", func(t *testing.T) {
@@ -183,10 +183,10 @@ func TestAuthRoutes(t *testing.T) {
 			assert.Equal(t, http.StatusOK, apiResponse.StatusCode)
 			assert.Equal(t, "success", responseBody.Status)
 			assert.NotNil(t, responseBody.User.ID)
-			assert.Equal(t, "Test User", responseBody.User.Name)
+			assert.Equal(t, "Test User", responseBody.User.FirstName)
 			assert.Equal(t, "test@gmail.com", responseBody.User.Email)
 			assert.Equal(t, "user", responseBody.User.Role)
-			assert.Equal(t, false, responseBody.User.VerifiedEmail)
+			assert.Equal(t, false, responseBody.User.EmailVerified)
 			assert.NotNil(t, responseBody.Tokens.Access.Token)
 			assert.NotNil(t, responseBody.Tokens.Refresh.Token)
 		})
@@ -688,7 +688,7 @@ func TestAuthRoutes(t *testing.T) {
 			user, err := helper.GetUserByID(test.DB, fixture.UserOne.ID.String())
 			assert.Nil(t, err)
 
-			assert.True(t, user.VerifiedEmail)
+			assert.True(t, user.EmailVerified)
 
 			dbVerifyEmailTokenDoc, _ := helper.GetTokenByUserID(test.DB, verifyEmailToken)
 			assert.Nil(t, dbVerifyEmailTokenDoc)

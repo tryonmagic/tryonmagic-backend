@@ -8,27 +8,27 @@ import (
 
 var UserOne = &model.User{
 	ID:            uuid.New(),
-	Name:          "Test1",
+	FirstName:     "Test1",
 	Email:         "test1@gmail.com",
 	Password:      "password1",
 	Role:          "user",
-	VerifiedEmail: false,
+	EmailVerified: false,
 }
 
 var UserTwo = &model.User{
 	ID:            uuid.New(),
-	Name:          "Test2",
+	FirstName:     "Test2",
 	Email:         "test2@gmail.com",
 	Password:      "password1",
 	Role:          "user",
-	VerifiedEmail: false,
+	EmailVerified: false,
 }
 
 var Admin = &model.User{
 	ID:            uuid.New(),
-	Name:          "Admin",
+	FirstName:     "Admin",
 	Email:         "admin@gmail.com",
 	Password:      "password1",
 	Role:          "admin",
-	VerifiedEmail: false,
+	EmailVerified: false,
 }
