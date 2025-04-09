@@ -25,11 +25,11 @@ type GoogleLogin struct {
 }
 
 type Logout struct {
-	RefreshToken string `json:"refresh_token" validate:"required,max=255"`
+	RefreshToken string `json:"refreshToken" validate:"required,max=255"`
 }
 
 type RefreshToken struct {
-	RefreshToken string `json:"refresh_token" validate:"required,max=255"`
+	RefreshToken string `json:"refreshToken" validate:"required,max=255"`
 }
 
 type ForgotPassword struct {
@@ -41,5 +41,5 @@ type Token struct {
 }
 
 type ShopifyAuth struct {
-	SessionToken string `json:"session_token" validate:"required"`
+	SessionToken string `json:"sessionToken" validate:"required"`
 }
