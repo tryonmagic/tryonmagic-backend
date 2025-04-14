@@ -25,7 +25,7 @@ type AuthService interface {
 	RefreshAuth(c *fiber.Ctx, req *validation.RefreshToken) (*response.Tokens, error)
 	ResetPassword(c *fiber.Ctx, query *validation.Token, req *validation.UpdatePassOrVerify) error
 	VerifyEmail(c *fiber.Ctx, query *validation.Token) error
-	ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, store bool) (*model.User, error)
+	ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, isOnline bool, store bool) (*model.User, error)
 }
 
 type authService struct {
@@ -192,8 +192,8 @@ func (s *authService) VerifyEmail(c *fiber.Ctx, query *validation.Token) error {
 	return nil
 }
 
-func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, store bool) (*model.User, error) {
-	val, err := utils.DecodeJWTToken(payload.SessionToken, "")
+func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, isOnline bool, store bool) (*model.User, error) {
+	val, err := utils.DecodeJWTToken(payload.SessionToken, config.ShopifyAPISecret)
 	if err != nil {
 		fmt.Printf("Error decoding token: %v", err)
 	}
@@ -206,7 +206,16 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 		return nil, err
 	}
 	if !store {
-		return nil, nil
+		shopifySession := new(model.ShopifySession)
+
+		result := s.DB.WithContext(c.Context()).Where("shop = ?", shop).Preload("User").First(shopifySession)
+
+		if result.Error != nil {
+			s.Log.Errorf("Failed to get shopify session: %+v", result.Error)
+			return nil, result.Error
+		}
+		s.Log.Printf("Shopify Session user: %v", shopifySession.User)
+		return shopifySession.User, nil
 	}
 	if session.OnlineAccessInfo != nil {
 		sessionAssociatedUser := session.OnlineAccessInfo.AssociatedUser

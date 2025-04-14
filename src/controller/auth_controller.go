@@ -378,7 +378,7 @@ func (a *AuthController) ShopifyAuth(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	_, err := a.AuthService.ShopifyAuth(c, req, true)
+	_, err := a.AuthService.ShopifyAuth(c, req, true, true)
 	if err != nil {
 		return err
 	}

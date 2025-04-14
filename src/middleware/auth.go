@@ -19,7 +19,7 @@ func verifyShopifyAuth(c *fiber.Ctx, authService service.AuthService, token stri
 
 	user, err := authService.ShopifyAuth(c, &validation.ShopifyAuth{
 		SessionToken: token,
-	}, true)
+	}, true, false)
 	if err != nil || user == nil {
 		utils.Log.Errorf("Failed to verify shopify auth: %+v", err)
 		return nil, fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
