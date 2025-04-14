@@ -1,12 +1,19 @@
 package example
 
-type Data interface{}
+type Data any
 
-type GenericResponse struct {
+type GenericSuccessResponse struct {
 	Code    int    `json:"code" example:"201"`
 	Status  string `json:"status" example:"success"`
 	Message string `json:"message" example:"Register successfully"`
 	Data    Data   `json:"data"`
+}
+
+type GenericErrorResponse struct {
+	Code    int    `json:"code" example:"201"`
+	Status  string `json:"status" example:"success"`
+	Message string `json:"message" example:"Register successfully"`
+	Errors  []any  `json:"errors"`
 }
 type RegisterResponse struct {
 	Code    int    `json:"code" example:"201"`

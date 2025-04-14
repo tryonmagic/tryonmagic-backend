@@ -1,0 +1,20 @@
+CREATE TABLE files (
+    id UUID PRIMARY KEY NOT NULL,
+    key VARCHAR(255) UNIQUE NOT NULL,
+    full_path VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    thumbnail_url VARCHAR(255),
+    resize_url VARCHAR(255),
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    size INT NOT NULL,
+    width DECIMAL NOT NULL,
+    height INT NOT NULL,
+    ext VARCHAR(20) NOT NULL,
+    mime VARCHAR(50) NOT NULL,
+    thumb_hash BYTEA,
+    user_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id)
+);

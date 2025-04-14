@@ -17,12 +17,14 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	userService := service.NewUserService(db, validate)
 	tokenService := service.NewTokenService(db, validate, userService)
 	authService := service.NewAuthService(db, validate, userService, tokenService)
+	storageService := service.NewStorageService(db, validate)
 
 	v1 := app.Group("/v1")
 
 	HealthCheckRoutes(v1, healthCheckService)
 	AuthRoutes(v1, authService, userService, tokenService, emailService)
 	UserRoutes(v1, authService, userService, tokenService)
+	StorageRoutes(v1, authService, userService, storageService)
 	// TODO: add another routes here...
 
 	if !config.IsProd {
