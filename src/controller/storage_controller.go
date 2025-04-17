@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"app/src/model"
 	"app/src/response"
 	"app/src/service"
 	"app/src/validation"
@@ -41,5 +42,26 @@ func (s *StorageController) SaveFile(c *fiber.Ctx) error {
 		Message: "File saved successfully",
 		Code:    fiber.StatusCreated,
 		Data:    file,
+	})
+}
+
+// @Summary Get all files
+// @Description Get all files for the logged-in user
+// @Accept json
+// @Produce json
+// @Success 200 {object} example.GenericSuccessResponse
+// @Failure 500 {object} example.GenericErrorResponse
+// @Router /storage/files [get]
+func (s *StorageController) GetFiles(c *fiber.Ctx) error {
+	user := c.Locals("user").(*model.User)
+	files, err := s.StorageService.GetFilesByUserID(c, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.GenericSuccessResponse{
+		Message: "Files retrieved successfully",
+		Code:    fiber.StatusOK,
+		Data:    files,
 	})
 }

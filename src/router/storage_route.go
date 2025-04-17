@@ -18,4 +18,5 @@ func StorageRoutes(
 	auth := v1.Group("/storage")
 
 	auth.Post("/save-file", m.Auth(a, u), storageController.SaveFile)
+	auth.Get("/files", m.Auth(a, u), storageController.GetFiles)
 }

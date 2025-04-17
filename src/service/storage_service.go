@@ -7,12 +7,14 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type StorageService interface {
 	SaveFile(c *fiber.Ctx, req *validation.SaveFile) (*model.File, error)
+	GetFilesByUserID(c *fiber.Ctx, userID uuid.UUID) ([]*model.File, error)
 }
 
 type storageService struct {
@@ -54,4 +56,13 @@ func (s *storageService) SaveFile(c *fiber.Ctx, req *validation.SaveFile) (*mode
 		return nil, err
 	}
 	return file, nil
+}
+
+func (s *storageService) GetFilesByUserID(c *fiber.Ctx, userID uuid.UUID) ([]*model.File, error) {
+	var files []*model.File
+	if err := s.DB.WithContext(c.Context()).Where("user_id = ?", userID).Find(&files).Error; err != nil {
+		s.Log.Errorf("Failed to get files: %+v", err)
+		return nil, err
+	}
+	return files, nil
 }

@@ -22,7 +22,7 @@ type File struct {
 	Ext          string    `gorm:"not null" json:"ext"`
 	Mime         string    `gorm:"not null" json:"mime"`
 	ThumbHash    *[]byte   `json:"thumbHash"`
-	UserID       uuid.UUID `gorm:"not null"`
+	UserID       uuid.UUID `gorm:"not null" json:"userId"`
 	User         *User     `gorm:"foreignKey:UserID;references:ID" json:"user"`
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
