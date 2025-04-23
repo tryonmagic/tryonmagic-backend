@@ -1,11 +1,11 @@
 package database
 
 import (
-	"app/src/config"
-	"app/src/utils"
 	"fmt"
 	"time"
 
+	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

@@ -1,9 +1,9 @@
 package test
 
 import (
-	"app/src/database"
-	"app/src/router"
-	"app/src/utils"
+	"github.com/mbbipul/prodigyai-backend/src/database"
+	"github.com/mbbipul/prodigyai-backend/src/router"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"

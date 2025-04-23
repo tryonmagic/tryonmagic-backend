@@ -1,14 +1,19 @@
 package utils
 
 import (
-	"app/src/response"
-	"app/src/validation"
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
+	"github.com/ztrue/tracerr"
 )
 
 func ErrorHandler(c *fiber.Ctx, err error) error {
+	fmt.Printf("Error: %v", err)
+	wrappedErr := tracerr.Wrap(err)
+	tracerr.PrintSourceColor(wrappedErr)
 	if errorsMap := validation.CustomErrorMessages(err); len(errorsMap) > 0 {
 		return response.Error(c, fiber.StatusBadRequest, "Bad Request", errorsMap)
 	}

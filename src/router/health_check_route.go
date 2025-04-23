@@ -1,10 +1,9 @@
 package router
 
 import (
-	"app/src/controller"
-	"app/src/service"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/mbbipul/prodigyai-backend/src/controller"
+	"github.com/mbbipul/prodigyai-backend/src/service"
 )
 
 func HealthCheckRoutes(v1 fiber.Router, h service.HealthCheckService) {

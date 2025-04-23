@@ -1,10 +1,11 @@
 package shopify
 
 import (
-	"app/src/pkg/shopify/utils"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/mbbipul/prodigyai-backend/src/pkg/shopify/utils"
 )
 
 type AssociatedUser struct {

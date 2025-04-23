@@ -1,12 +1,13 @@
 package service
 
 import (
-	"app/src/config"
-	"app/src/model"
-	res "app/src/response"
-	"app/src/utils"
-	"app/src/validation"
 	"time"
+
+	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/prodigyai-backend/src/model"
+	res "github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"

@@ -1,13 +1,13 @@
 package service
 
 import (
-	"app/src/model"
-	"app/src/utils"
-	"app/src/validation"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/mbbipul/prodigyai-backend/src/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

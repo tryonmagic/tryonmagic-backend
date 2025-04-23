@@ -1,16 +1,18 @@
 package main
 
 import (
-	"app/src/config"
-	"app/src/database"
-	"app/src/middleware"
-	"app/src/router"
-	"app/src/utils"
 	"context"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/prodigyai-backend/src/database"
+	"github.com/mbbipul/prodigyai-backend/src/internal/adapter/grpc"
+	"github.com/mbbipul/prodigyai-backend/src/middleware"
+	"github.com/mbbipul/prodigyai-backend/src/router"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -30,9 +32,11 @@ func main() {
 
 	address := fmt.Sprintf("%s:%d", config.AppHost, config.AppPort)
 
-	// Start server and handle graceful shutdown
-	serverErrors := make(chan error, 1)
+	// Start Fiber server and gRPC server
+	serverErrors := make(chan error, 2)
 	go startServer(app, address, serverErrors)
+	go startGrpcServer(db, serverErrors)
+
 	handleGracefulShutdown(ctx, app, serverErrors)
 }
 
@@ -67,8 +71,17 @@ func setupRoutes(app *fiber.App, db *gorm.DB) {
 
 func startServer(app *fiber.App, address string, errs chan<- error) {
 	if err := app.Listen(address); err != nil {
-		errs <- fmt.Errorf("error starting server: %w", err)
+		errs <- fmt.Errorf("error starting Fiber server: %w", err)
 	}
+}
+
+func startGrpcServer(db *gorm.DB, errs chan<- error) {
+	defer func() {
+		if r := recover(); r != nil {
+			errs <- fmt.Errorf("gRPC server panic: %v", r)
+		}
+	}()
+	grpc.StartServer(db)
 }
 
 func closeDatabase(db *gorm.DB) {
@@ -93,13 +106,14 @@ func handleGracefulShutdown(ctx context.Context, app *fiber.App, serverErrors <-
 	case err := <-serverErrors:
 		utils.Log.Fatalf("Server error: %v", err)
 	case <-quit:
-		utils.Log.Info("Shutting down server...")
+		utils.Log.Info("Shutting down servers...")
 		if err := app.Shutdown(); err != nil {
-			utils.Log.Fatalf("Error during server shutdown: %v", err)
+			utils.Log.Fatalf("Error during Fiber server shutdown: %v", err)
 		}
+		// Add any additional cleanup for gRPC server if needed
 	case <-ctx.Done():
-		utils.Log.Info("Server exiting due to context cancellation")
+		utils.Log.Info("Servers exiting due to context cancellation")
 	}
 
-	utils.Log.Info("Server exited")
+	utils.Log.Info("Servers exited")
 }

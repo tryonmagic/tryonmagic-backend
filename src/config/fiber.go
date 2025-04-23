@@ -1,10 +1,9 @@
 package config
 
 import (
-	"app/src/utils"
-
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
 )
 
 func FiberConfig() fiber.Config {

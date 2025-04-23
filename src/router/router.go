@@ -1,11 +1,10 @@
 package router
 
 import (
-	"app/src/config"
-	"app/src/service"
-	"app/src/validation"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/prodigyai-backend/src/service"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
 	"gorm.io/gorm"
 )
 
@@ -18,6 +17,7 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	tokenService := service.NewTokenService(db, validate, userService)
 	authService := service.NewAuthService(db, validate, userService, tokenService)
 	storageService := service.NewStorageService(db, validate)
+	taskService := service.NewTaskService(db, validate)
 
 	v1 := app.Group("/v1")
 
@@ -25,6 +25,7 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	AuthRoutes(v1, authService, userService, tokenService, emailService)
 	UserRoutes(v1, authService, userService, tokenService)
 	StorageRoutes(v1, authService, userService, storageService)
+	TaskRoutes(v1, authService, userService, taskService)
 	// TODO: add another routes here...
 
 	if !config.IsProd {

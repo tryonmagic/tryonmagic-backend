@@ -1,18 +1,18 @@
 package service
 
 import (
-	"app/src/config"
-	"app/src/model"
-	"app/src/pkg/shopify"
-	"app/src/response"
-	"app/src/utils"
-	"app/src/validation"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/pkg/shopify"
+	"github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -199,6 +199,7 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 	}
 	dest := val["dest"].(string)
 	shop := strings.Replace(dest, "https://", "", 1)
+	c.Locals("shop", shop)
 
 	session, err := shopify.TokenExchange(shop, payload.SessionToken)
 	if err != nil {

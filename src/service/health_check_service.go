@@ -1,10 +1,10 @@
 package service
 
 import (
-	"app/src/utils"
 	"errors"
 	"runtime"
 
+	"github.com/mbbipul/prodigyai-backend/src/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

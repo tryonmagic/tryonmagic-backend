@@ -1,10 +1,11 @@
 package model_test
 
 import (
-	"app/src/model"
-	"app/src/validation"
 	"encoding/json"
 	"testing"
+
+	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
 
 	"github.com/stretchr/testify/assert"
 )

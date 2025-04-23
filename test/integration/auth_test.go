@@ -1,13 +1,6 @@
 package integration
 
 import (
-	"app/src/config"
-	"app/src/response"
-	"app/src/utils"
-	"app/src/validation"
-	"app/test"
-	"app/test/fixture"
-	"app/test/helper"
 	_ "embed"
 	"encoding/json"
 	"io"
@@ -16,6 +9,14 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
+	"github.com/mbbipul/prodigyai-backend/test"
+	"github.com/mbbipul/prodigyai-backend/test/fixture"
+	"github.com/mbbipul/prodigyai-backend/test/helper"
 
 	"github.com/stretchr/testify/assert"
 )

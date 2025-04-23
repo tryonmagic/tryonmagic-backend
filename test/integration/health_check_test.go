@@ -1,13 +1,14 @@
 package integration
 
 import (
-	"app/src/response"
-	"app/test"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/prodigyai-backend/test"
 
 	"github.com/stretchr/testify/assert"
 )

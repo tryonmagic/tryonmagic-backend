@@ -1,13 +1,14 @@
 package shopify
 
 import (
-	"app/src/config"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/mbbipul/prodigyai-backend/src/config"
 )
 
 type TokenExchangeRequest struct {

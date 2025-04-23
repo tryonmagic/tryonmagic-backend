@@ -2,7 +2,7 @@ package config
 
 import (
 	// initialize the Swagger documentation
-	"app/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/model"
 )
 
 var allRoles = map[model.Role][]string{

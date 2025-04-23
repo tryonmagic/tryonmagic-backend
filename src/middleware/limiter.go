@@ -1,8 +1,9 @@
 package middleware
 
 import (
-	"app/src/response"
 	"time"
+
+	"github.com/mbbipul/prodigyai-backend/src/response"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"

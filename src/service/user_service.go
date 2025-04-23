@@ -1,10 +1,11 @@
 package service
 
 import (
-	"app/src/model"
-	"app/src/utils"
-	"app/src/validation"
 	"errors"
+
+	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"

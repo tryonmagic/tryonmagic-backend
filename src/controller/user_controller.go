@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"app/src/model"
-	"app/src/response"
-	"app/src/service"
-	"app/src/validation"
 	"math"
+
+	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/prodigyai-backend/src/service"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"

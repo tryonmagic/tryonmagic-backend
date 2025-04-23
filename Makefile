@@ -1,6 +1,8 @@
 include .env
 export $(shell sed 's/=.*//' .env)
 
+air:
+	@bin/air
 start:
 	@go run src/main.go
 lint:
@@ -14,7 +16,7 @@ testsum:
 swagger:
 	@cd src && swag init
 migration-%:
-	@migrate create -ext sql -dir src/database/migrations create-table-$(subst :,_,$*)
+	@migrate create -ext sql -dir src/database/migrations $(subst :,_,$*)
 migrate-up:
 	@migrate -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=require" -path src/database/migrations up
 migrate-down:
@@ -32,3 +34,7 @@ docker-down:
 	@docker-compose down --rmi all --volumes --remove-orphans
 docker-cache:
 	@docker builder prune -f
+proto:
+	@protoc --go_out=. --go_opt=paths=source_relative \
+	    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	    src/internal/adapter/grpc/task.proto

@@ -1,37 +1,41 @@
 package config
 
 import (
-	"app/src/utils"
-
+	"github.com/mbbipul/prodigyai-backend/src/utils"
 	"github.com/spf13/viper"
 )
 
 var (
-	IsProd              bool
-	AppHost             string
-	AppPort             int
-	DBHost              string
-	DBUser              string
-	DBPassword          string
-	DBName              string
-	DBPort              int
-	JWTSecret           string
-	JWTAccessExp        int
-	JWTInternalExp      int
-	JWTRefreshExp       int
-	JWTResetPasswordExp int
-	JWTVerifyEmailExp   int
-	SMTPHost            string
-	SMTPPort            int
-	SMTPUsername        string
-	SMTPPassword        string
-	EmailFrom           string
-	GoogleClientID      string
-	GoogleClientSecret  string
-	RedirectURL         string
-	ShopifyAPIKey       string
-	ShopifyAPISecret    string
-	ShopifyAPPScopes    string
+	IsProd                         bool
+	AppHost                        string
+	AppPort                        int
+	DBHost                         string
+	DBUser                         string
+	DBPassword                     string
+	DBName                         string
+	DBPort                         int
+	JWTSecret                      string
+	JWTAccessExp                   int
+	JWTInternalExp                 int
+	JWTRefreshExp                  int
+	JWTResetPasswordExp            int
+	JWTVerifyEmailExp              int
+	SMTPHost                       string
+	SMTPPort                       int
+	SMTPUsername                   string
+	SMTPPassword                   string
+	EmailFrom                      string
+	GoogleClientID                 string
+	GoogleClientSecret             string
+	RedirectURL                    string
+	ShopifyAPIKey                  string
+	ShopifyAPISecret               string
+	ShopifyAPPScopes               string
+	RabbitMQConnectionUrl          string
+	AITaskExchangeName             string = "ai.task.exchange"
+	RemoveBackgroundTaskQueueName  string = "queue.background_removal"
+	RemoveBackgroundTaskRoutingKey string = "task.background_removal"
+	GrpcServerPort                 int32
 )
 
 func init() {
@@ -71,6 +75,8 @@ func init() {
 	ShopifyAPIKey = viper.GetString("SHOPIFY_API_KEY")
 	ShopifyAPISecret = viper.GetString("SHOPIFY_API_SECRET")
 	ShopifyAPPScopes = viper.GetString("SHOPIFY_APP_SCOPES")
+	RabbitMQConnectionUrl = viper.GetString("RABBITMQ_CONNECTION_URI")
+	GrpcServerPort = int32(viper.GetInt("GRPC_SERVER_PORT"))
 }
 
 func loadConfig() {

@@ -1,10 +1,10 @@
 package service
 
 import (
-	"app/src/config"
-	"app/src/utils"
 	"fmt"
 
+	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/prodigyai-backend/src/utils"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/gomail.v2"
 )
@@ -51,7 +51,7 @@ func (s *emailService) SendResetPasswordEmail(to, token string) error {
 	subject := "Reset password"
 
 	// TODO: replace this url with the link to the reset password page of your front-end app
-	resetPasswordURL := fmt.Sprintf("http://link-to-app/reset-password?token=%s", token)
+	resetPasswordURL := fmt.Sprintf("http://link-to-github.com/mbbipul/prodigyai-backend/reset-password?token=%s", token)
 	body := fmt.Sprintf(`Dear user,
 
 To reset your password, click on this link: %s
@@ -64,7 +64,7 @@ func (s *emailService) SendVerificationEmail(to, token string) error {
 	subject := "Email Verification"
 
 	// TODO: replace this url with the link to the email verification page of your front-end app
-	verificationEmailURL := fmt.Sprintf("http://link-to-app/verify-email?token=%s", token)
+	verificationEmailURL := fmt.Sprintf("http://link-to-github.com/mbbipul/prodigyai-backend/verify-email?token=%s", token)
 	body := fmt.Sprintf(`Dear user,
 
 To verify your email, click on this link: %s

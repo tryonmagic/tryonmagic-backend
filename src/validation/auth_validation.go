@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"app/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/model"
 )
 
 type Register struct {

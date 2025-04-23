@@ -2,7 +2,7 @@ package router
 
 import (
 	// initialize the Swagger documentation
-	_ "app/src/docs"
+	_ "github.com/mbbipul/prodigyai-backend/src/docs"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"

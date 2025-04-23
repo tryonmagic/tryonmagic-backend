@@ -1,0 +1,22 @@
+syntax = "proto3";
+import "google/protobuf/struct.proto";
+
+package task;
+option go_package = "github.com/mbbipul/prodigyai-backend/internal/adapter/grpc";
+
+service TaskService {
+  rpc UpdateTaskStatus (UpdateTaskStatusRequest) returns (UpdateTaskStatusRequest);
+}
+
+message UpdateTaskStatusRequest {
+    string taskId = 1;
+    string type = 2;
+    string status = 3;
+    google.protobuf.Struct resultData = 4;
+    string error = 5;
+    int32 retryCount = 6;
+    string userId = 7;
+    string startedAt = 8;
+    string completedAt = 9;
+}
+

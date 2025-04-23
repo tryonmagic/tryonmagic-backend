@@ -1,6 +1,6 @@
 package response
 
-import "app/src/model"
+import "github.com/mbbipul/prodigyai-backend/src/model"
 
 type Common struct {
 	Code    int    `json:"code"`

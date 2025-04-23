@@ -1,18 +1,19 @@
 package integration
 
 import (
-	"app/src/model"
-	"app/src/response"
-	"app/src/validation"
-	"app/test"
-	"app/test/fixture"
-	"app/test/helper"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/prodigyai-backend/src/validation"
+	"github.com/mbbipul/prodigyai-backend/test"
+	"github.com/mbbipul/prodigyai-backend/test/fixture"
+	"github.com/mbbipul/prodigyai-backend/test/helper"
 
 	"github.com/stretchr/testify/assert"
 )

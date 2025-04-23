@@ -1,7 +1,7 @@
 package fixture
 
 import (
-	"app/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/model"
 
 	"github.com/google/uuid"
 )
