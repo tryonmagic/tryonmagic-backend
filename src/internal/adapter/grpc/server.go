@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mbbipul/prodigyai-backend/src/config"
+	socket "github.com/mbbipul/prodigyai-backend/src/internal/adapter/socketio"
 	"github.com/mbbipul/prodigyai-backend/src/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -81,6 +82,17 @@ func (t *server) UpdateTask(taskInfo *UpdateTaskStatusRequest) (*model.Task, err
 	}).Error; err != nil {
 		fmt.Printf("Failed to update task: %+v", err)
 		return nil, err
+	}
+
+	userId := taskInfo.UserId
+	err := socket.EmitEventToUser(userId, "task-progress", map[string]any{
+		"id":         task.ID,
+		"type":       task.Type,
+		"status":     task.Status,
+		"resultData": task.ResultData,
+	})
+	if err != nil {
+		fmt.Printf("Failed to emit event to user: %+v", err)
 	}
 	return task, nil
 }

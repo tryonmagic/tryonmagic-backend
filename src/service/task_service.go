@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -97,11 +98,26 @@ func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.
 	err = t.PublishRemoveBackgroundTask(c, task)
 	if err != nil {
 		t.Log.Errorf("Failed to publish task: %+v", err)
+		return nil, err
 	}
-	task.Status = model.TaskStatusQueued
-	if err := t.DB.WithContext(c.Context()).Save(task).Error; err != nil {
-		t.Log.Errorf("Failed to update task status: %+v", err)
-	}
+
+	taskID := task.ID
+
+	go func(id string) {
+		// Create a new background context
+		ctx := context.Background()
+
+		// Update status in a separate transaction
+		err := t.DB.WithContext(ctx).
+			Model(&model.Task{}).
+			Where("id = ?", id).
+			Update("status", model.TaskStatusQueued).
+			Error
+
+		if err != nil {
+			t.Log.Errorf("Failed to update task status: %+v", err)
+		}
+	}(taskID)
 
 	return task, nil
 }
@@ -128,7 +144,7 @@ func (t *taskService) PublishRemoveBackgroundTask(c *fiber.Ctx, task *model.Task
 		"shop":      c.Locals("shop").(string),
 	}
 
-	t.Log.Infof("Publishing task: %s", task.ID)
+	t.Log.Infof("Publishing task: %s", newTask)
 
 	err = publisher.Publish(c.Context(), newTask, headers)
 
