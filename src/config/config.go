@@ -6,36 +6,38 @@ import (
 )
 
 var (
-	IsProd                         bool
-	AppHost                        string
-	AppPort                        int
-	DBHost                         string
-	DBUser                         string
-	DBPassword                     string
-	DBName                         string
-	DBPort                         int
-	JWTSecret                      string
-	JWTAccessExp                   int
-	JWTInternalExp                 int
-	JWTRefreshExp                  int
-	JWTResetPasswordExp            int
-	JWTVerifyEmailExp              int
-	SMTPHost                       string
-	SMTPPort                       int
-	SMTPUsername                   string
-	SMTPPassword                   string
-	EmailFrom                      string
-	GoogleClientID                 string
-	GoogleClientSecret             string
-	RedirectURL                    string
-	ShopifyAPIKey                  string
-	ShopifyAPISecret               string
-	ShopifyAPPScopes               string
-	RabbitMQConnectionUrl          string
-	AITaskExchangeName             string = "ai.task.exchange"
-	RemoveBackgroundTaskQueueName  string = "queue.background_removal"
-	RemoveBackgroundTaskRoutingKey string = "task.background_removal"
-	GrpcServerPort                 int32
+	IsProd                          bool
+	AppHost                         string
+	AppPort                         int
+	DBHost                          string
+	DBUser                          string
+	DBPassword                      string
+	DBName                          string
+	DBPort                          int
+	JWTSecret                       string
+	JWTAccessExp                    int
+	JWTInternalExp                  int
+	JWTRefreshExp                   int
+	JWTResetPasswordExp             int
+	JWTVerifyEmailExp               int
+	SMTPHost                        string
+	SMTPPort                        int
+	SMTPUsername                    string
+	SMTPPassword                    string
+	EmailFrom                       string
+	GoogleClientID                  string
+	GoogleClientSecret              string
+	RedirectURL                     string
+	ShopifyAPIKey                   string
+	ShopifyAPISecret                string
+	ShopifyAPPScopes                string
+	RabbitMQConnectionUrl           string
+	AITaskExchangeName              string = "ai.task.exchange"
+	RemoveBackgroundTaskQueueName   string = "queue.background_removal"
+	RemoveBackgroundTaskRoutingKey  string = "task.background_removal"
+	ReplaceBackgroundTaskQueueName  string = "queue.background_replacement"
+	ReplaceBackgroundTaskRoutingKey string = "task.background_replacement"
+	GrpcServerPort                  int32
 )
 
 func init() {

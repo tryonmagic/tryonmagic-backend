@@ -47,9 +47,8 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 		t.Log.Errorf("Validation error: %+v", err)
 		return nil, err
 	}
-
+	t.Log.Info("Creating new task of type %v, input: %v", newTask.Type, newTask.InputData)
 	if newTask.Type == model.TaskTypeRemoveBackground {
-		t.Log.Infof("Creating new task of type %s, input: %v", newTask.Type, newTask.InputData)
 
 		// Unmarshal InputData into RemoveBackgroundTaskInput
 		var inputData validation.RemoveBackgroundTaskInput
@@ -64,6 +63,23 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 		}
 
 		return t.NewRemoveBackgroundTask(c, &validation.NewTask[validation.RemoveBackgroundTaskInput]{
+			Type:      newTask.Type,
+			InputData: inputData,
+		})
+	} else if newTask.Type == model.TaskTypeReplaceBackground {
+		// Unmarshal InputData into ReplaceBackgroundTaskInput
+		var inputData validation.ReplaceBackgroundTaskInput
+		inputBytes, err := json.Marshal(newTask.InputData)
+		if err != nil {
+			t.Log.Errorf("Failed to marshal input data: %+v", err)
+			return nil, errors.New("invalid input data format")
+		}
+		if err := json.Unmarshal(inputBytes, &inputData); err != nil {
+			t.Log.Errorf("Failed to unmarshal input data into ReplaceBackgroundTaskInput: %+v", err)
+			return nil, errors.New("invalid input data structure")
+		}
+
+		return t.NewReplaceBackgroundTask(c, &validation.NewTask[validation.ReplaceBackgroundTaskInput]{
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
@@ -94,8 +110,12 @@ func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
 	}
-
-	err = t.PublishRemoveBackgroundTask(c, task)
+	publisher, err := rabbitmq.RemoveBackgroundTaskPublisher()
+	if err != nil {
+		t.Log.Errorf("Failed to create publisher: %+v", err)
+		return nil, err
+	}
+	err = t.PublishTask(c, publisher, task)
 	if err != nil {
 		t.Log.Errorf("Failed to publish task: %+v", err)
 		return nil, err
@@ -122,15 +142,65 @@ func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.
 	return task, nil
 }
 
-func (t *taskService) PublishRemoveBackgroundTask(c *fiber.Ctx, task *model.Task) error {
-	publisher, err := rabbitmq.RemoveBackgroundTaskPublisher()
-	if err != nil {
-		t.Log.Errorf("Failed to create publisher: %+v", err)
-		return err
+func (t *taskService) NewReplaceBackgroundTask(c *fiber.Ctx, newTask *validation.NewTask[validation.ReplaceBackgroundTaskInput]) (*model.Task, error) {
+
+	t.Log.Printf("Creating NewReplaceBackgroundTask")
+	if err := t.Validate.Struct(newTask); err != nil {
+		t.Log.Errorf("Validation error: %+v", err)
+		return nil, err
 	}
 
+	inputData, err := json.Marshal(newTask.InputData)
+	if err != nil {
+		t.Log.Errorf("Failed to marshal input data: %+v", err)
+		return nil, err
+	}
+	task := &model.Task{
+		Type:      newTask.Type,
+		InputData: datatypes.JSON(inputData),
+		UserID:    c.Locals("user").(*model.User).ID,
+	}
+
+	if err := t.DB.WithContext(c.Context()).Create(task).Error; err != nil {
+		t.Log.Errorf("Failed to create task: %+v", err)
+		return nil, err
+	}
+	publisher, err := rabbitmq.ReplaceBackgroundTaskPublisher()
+	if err != nil {
+		t.Log.Errorf("Failed to create publisher: %+v", err)
+		return nil, err
+	}
+	err = t.PublishTask(c, publisher, task)
+	if err != nil {
+		t.Log.Errorf("Failed to publish task: %+v", err)
+		return nil, err
+	}
+
+	taskID := task.ID
+
+	go func(id string) {
+		// Create a new background context
+		ctx := context.Background()
+
+		// Update status in a separate transaction
+		err := t.DB.WithContext(ctx).
+			Model(&model.Task{}).
+			Where("id = ?", id).
+			Update("status", model.TaskStatusQueued).
+			Error
+
+		if err != nil {
+			t.Log.Errorf("Failed to update task status: %+v", err)
+		}
+	}(taskID)
+
+	return task, nil
+}
+
+func (t *taskService) PublishTask(c *fiber.Ctx, publisher rabbitmq.BasePublisher, task *model.Task) error {
+
 	headers := rabbitmq.Headers{
-		TaskType: string(model.TaskTypeRemoveBackground),
+		TaskType: string(task.Type),
 		JobID:    task.ID,
 		Priority: 0,
 	}
@@ -146,7 +216,7 @@ func (t *taskService) PublishRemoveBackgroundTask(c *fiber.Ctx, task *model.Task
 
 	t.Log.Infof("Publishing task: %s", newTask)
 
-	err = publisher.Publish(c.Context(), newTask, headers)
+	err := publisher.Publish(c.Context(), newTask, headers)
 
 	if err != nil {
 		t.Log.Errorf("Failed to publish task: %+v", err)
