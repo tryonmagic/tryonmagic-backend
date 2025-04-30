@@ -37,6 +37,8 @@ var (
 	RemoveBackgroundTaskRoutingKey  string = "task.background_removal"
 	ReplaceBackgroundTaskQueueName  string = "queue.background_replacement"
 	ReplaceBackgroundTaskRoutingKey string = "task.background_replacement"
+	GenerateAIModelTaskQueueName    string = "queue.generate_ai_model"
+	GenerateAIModelTaskRoutingKey   string = "task.generate_ai_model"
 	GrpcServerPort                  int32
 )
 

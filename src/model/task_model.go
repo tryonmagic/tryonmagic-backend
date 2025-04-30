@@ -24,10 +24,12 @@ const (
 	TaskTypeRemoveBackground  TaskType = "REMOVE_BACKGROUND"
 	TaskTypeGenerateImage     TaskType = "GENERATE_IMAGE"
 	TaskTypeReplaceBackground TaskType = "REPLACE_BACKGROUND"
+
+	TaskTypeGenerateAIModel TaskType = "GENERATE_AI_MODEL"
 )
 
 type Task struct {
-	ID          string          `gorm:"primaryKey;type:char(36)" json:"id"` // UUID
+	ID          uuid.UUID       `gorm:"primaryKey;type:char(36)" json:"id"` // UUID
 	Type        TaskType        `gorm:"not null" json:"type"`
 	Status      TaskStatus      `gorm:"default:PENDING;not null" json:"status"`
 	InputData   datatypes.JSON  `gorm:"type:text" json:"inputData"`
@@ -43,6 +45,6 @@ type Task struct {
 }
 
 func (task *Task) BeforeCreate(tx *gorm.DB) error {
-	task.ID = uuid.New().String()
+	task.ID = uuid.New()
 	return nil
 }

@@ -18,6 +18,7 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	authService := service.NewAuthService(db, validate, userService, tokenService)
 	storageService := service.NewStorageService(db, validate)
 	taskService := service.NewTaskService(db, validate)
+	aiModelService := service.NewAIModelService(db, validate, taskService)
 
 	v1 := app.Group("/v1")
 
@@ -26,7 +27,7 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	UserRoutes(v1, authService, userService, tokenService)
 	StorageRoutes(v1, authService, userService, storageService)
 	TaskRoutes(v1, authService, userService, taskService)
-	// TODO: add another routes here...
+	AIModelRoutes(v1, authService, userService, aiModelService)
 
 	if !config.IsProd {
 		DocsRoutes(v1)

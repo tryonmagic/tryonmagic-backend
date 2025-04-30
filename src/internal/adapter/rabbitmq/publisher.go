@@ -166,3 +166,19 @@ func ReplaceBackgroundTaskPublisher() (BasePublisher, error) {
 	}
 	return &publisher, nil
 }
+
+func GenerateAIModelTaskPublisher() (BasePublisher, error) {
+	conn, err := GetConnection()
+	if err != nil {
+		log.Printf("Failed to connect to Message broker: %v", err)
+		return nil, err
+	}
+	publisher := basePublisher{
+		Publisher:    NewPublisher(conn),
+		exchangeName: config.AITaskExchangeName,
+		exchangeType: "direct",
+		queueName:    config.GenerateAIModelTaskQueueName,
+		routingKey:   config.GenerateAIModelTaskRoutingKey,
+	}
+	return &publisher, nil
+}

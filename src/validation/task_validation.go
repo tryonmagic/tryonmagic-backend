@@ -32,7 +32,11 @@ type ReplaceBackgroundTaskInput struct {
 	BackgroundSourceValue     string               `json:"backgroundSourceValue" validate:"required" example:"https://example.com/background.jpg"`
 }
 
+type GenerateAIModelTaskInput struct {
+	model.AIModel
+}
+
 type NewTask[T any] struct {
-	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND" example:"REMOVE_BACKGROUND"`
+	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL" example:"REMOVE_BACKGROUND"`
 	InputData T              `json:"inputData" validate:"required" example:"{\"key\": \"value\"}"`
 }

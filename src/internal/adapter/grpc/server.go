@@ -8,6 +8,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mbbipul/prodigyai-backend/src/config"
 	socket "github.com/mbbipul/prodigyai-backend/src/internal/adapter/socketio"
 	"github.com/mbbipul/prodigyai-backend/src/model"
@@ -63,8 +64,13 @@ func (t *server) UpdateTask(taskInfo *UpdateTaskStatusRequest) (*model.Task, err
 	}
 
 	fmt.Printf("Updating task: %s, status: %s, resultData: %v", taskInfo.TaskId, taskInfo.Status, resultData)
+	taskId, err := uuid.Parse(taskInfo.TaskId)
+	if err != nil {
+		fmt.Printf("Failed to parse task ID: %s, error: %v", taskInfo.TaskId, err)
+		return nil, err
+	}
 	task := new(model.Task)
-	task.ID = taskInfo.TaskId
+	task.ID = taskId
 	task.Status = model.TaskStatus(taskInfo.Status)
 	task.ResultData = resultData
 	task.Error = &taskInfo.Error
@@ -85,8 +91,8 @@ func (t *server) UpdateTask(taskInfo *UpdateTaskStatusRequest) (*model.Task, err
 	}
 
 	userId := taskInfo.UserId
-	err := socket.EmitEventToUser(userId, "task-progress", map[string]any{
-		"id":         task.ID,
+	err = socket.EmitEventToUser(userId, "task-progress", map[string]any{
+		"id":         taskInfo.TaskId,
 		"type":       task.Type,
 		"status":     task.Status,
 		"resultData": task.ResultData,

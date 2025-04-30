@@ -21,6 +21,10 @@ migrate-up:
 	@migrate -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=require" -path src/database/migrations up
 migrate-down:
 	@migrate -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=require" -path src/database/migrations down
+migrate-force:
+	@migrate -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=require" -path src/database/migrations force $(VERSION)
+migrate-status:
+	@migrate -database "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=require" -path src/database/migrations version
 migrate-docker-up:
 	@docker run -v ./src/database/migrations:/migrations --network go-fiber-boilerplate_go-network migrate/migrate -path=/migrations/ -database postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=require;sslrootcert=ca.pem up
 migrate-docker-down:
@@ -36,5 +40,5 @@ docker-cache:
 	@docker builder prune -f
 proto:
 	@protoc --go_out=. --go_opt=paths=source_relative \
-	    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-	    src/internal/adapter/grpc/task.proto
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		src/internal/adapter/grpc/task.proto
