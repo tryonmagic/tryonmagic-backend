@@ -1,4 +1,11 @@
 {
 	"makefile.configureOnOpen": false,
-	"cSpell.words": ["amqp", "datatypes", "mbbipul", "prodigyai", "rabbitmq"]
+	"cSpell.words": [
+		"amqp",
+		"datatypes",
+		"gorm",
+		"mbbipul",
+		"prodigyai",
+		"rabbitmq"
+	]
 }

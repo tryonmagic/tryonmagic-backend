@@ -106,7 +106,12 @@ func (s *aIModelService) BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIMod
 
 func (s *aIModelService) GetAIModels(c *fiber.Ctx) ([]model.AIModel, error) {
 	var aiModels []model.AIModel
-	err := s.DB.WithContext(c.Context()).Find(&aiModels).Error
+
+	userId := c.Locals("user").(*model.User).ID
+	if userId == uuid.Nil {
+		return aiModels, nil
+	}
+	err := s.DB.WithContext(c.Context()).Find(&aiModels).Where(&model.AIModel{UserID: &userId}).Order("created_at DESC").Error
 	return aiModels, err
 }
 

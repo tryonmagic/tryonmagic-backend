@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -90,6 +91,39 @@ func (t *server) UpdateTask(taskInfo *UpdateTaskStatusRequest) (*model.Task, err
 		return nil, err
 	}
 
+	if taskInfo.Status == string(model.TaskStatusSucceeded) && taskInfo.Type == string(model.TaskTypeGenerateAIModel) {
+		var resultMap map[string]interface{}
+		if resultData != nil {
+			if err := json.Unmarshal([]byte(*resultData), &resultMap); err != nil {
+				fmt.Printf("Failed to unmarshal resultData: %+v", err)
+				return nil, err
+			}
+		}
+		outputImageUrl, ok := resultMap["outputImageUrl"].(string)
+		if !ok {
+			fmt.Printf("outputImageUrl key not found or invalid in resultData")
+			return nil, fmt.Errorf("outputImageUrl key not found or invalid in resultData")
+		}
+		resolution := datatypes.JSON{}
+		if width, ok := resultMap["width"].(float64); ok {
+			if height, ok := resultMap["height"].(float64); ok {
+				resolution = datatypes.JSON(fmt.Sprintf(`{"width": %d, "height": %d}`, int(width), int(height)))
+			} else {
+				fmt.Printf("height key not found or invalid in resultData")
+			}
+		} else {
+			fmt.Printf("width key not found or invalid in resultData")
+		}
+
+		if err := t.DB.WithContext(context.Background()).Model(&model.AIModel{}).Where("task_id = ?", taskInfo.TaskId).Updates(model.AIModel{
+			ModelImageUrl: &outputImageUrl,
+			Resolution:    resolution,
+		}).Error; err != nil {
+			fmt.Printf("Failed to update AI model: %+v", err)
+			return nil, err
+		}
+	}
+
 	userId := taskInfo.UserId
 	err = socket.EmitEventToUser(userId, "task-progress", map[string]any{
 		"id":         taskInfo.TaskId,
@@ -100,6 +134,7 @@ func (t *server) UpdateTask(taskInfo *UpdateTaskStatusRequest) (*model.Task, err
 	if err != nil {
 		fmt.Printf("Failed to emit event to user: %+v", err)
 	}
+	fmt.Printf("Emitted event to user: %s, task ID: %s,type: %s status: %s", userId, task.ID, taskInfo.Type, task.Status)
 	return task, nil
 }
 
