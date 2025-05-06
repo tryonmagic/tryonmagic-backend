@@ -36,7 +36,24 @@ type GenerateAIModelTaskInput struct {
 	model.AIModel
 }
 
+type VTONModelMode string
+
+const (
+	ModelModePerformance VTONModelMode = "performance"
+	ModelModeQuality     VTONModelMode = "quality"
+	ModelModeBalanced    VTONModelMode = "balanced"
+)
+
+type VTONTaskInput struct {
+	OutfitType   model.OutfitType `json:"outfitType" validate:"required,oneof=TOP BOTTOM FULL_BODY" example:"TOP"`
+	ModelMode    VTONModelMode    `json:"modelMode" validate:"required,oneof=performance quality balanced" example:"performance"`
+	ModelImage   string           `json:"modelImage" validate:"required" example:"https://example.com/model.jpg"`
+	GarmentImage string           `json:"garmentImage" validate:"required" example:"https://example.com/garment.jpg"`
+	NumSamples   int              `json:"numSamples" validate:"required,min=1,max=10" example:"5"`
+	Seed         int              `json:"seed" validate:"required" example:"42"`
+}
+
 type NewTask[T any] struct {
-	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL" example:"REMOVE_BACKGROUND"`
+	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON" example:"REMOVE_BACKGROUND"`
 	InputData T              `json:"inputData" validate:"required" example:"{\"key\": \"value\"}"`
 }

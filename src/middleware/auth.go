@@ -89,3 +89,22 @@ func hasAllRights(userRights, requiredRights []string) bool {
 	}
 	return true
 }
+
+func WebhookAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		apiKey := c.Params("apiKey")
+		if apiKey == "" {
+			return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+		}
+		token := strings.TrimSpace(apiKey)
+		if token == "" {
+			return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+		}
+
+		if token != config.WebhookAPIKey {
+			return fiber.NewError(fiber.StatusUnauthorized, "Please authenticate")
+		}
+
+		return c.Next()
+	}
+}

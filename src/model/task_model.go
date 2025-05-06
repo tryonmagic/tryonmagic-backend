@@ -26,6 +26,7 @@ const (
 	TaskTypeReplaceBackground TaskType = "REPLACE_BACKGROUND"
 
 	TaskTypeGenerateAIModel TaskType = "GENERATE_AI_MODEL"
+	TaskTypeVTon            TaskType = "VTON"
 )
 
 type Task struct {

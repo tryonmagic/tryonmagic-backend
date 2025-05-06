@@ -39,7 +39,17 @@ var (
 	ReplaceBackgroundTaskRoutingKey string = "task.background_replacement"
 	GenerateAIModelTaskQueueName    string = "queue.generate_ai_model"
 	GenerateAIModelTaskRoutingKey   string = "task.generate_ai_model"
+	VTONTaskQueueName               string = "queue.vton"
+	VTONTaskRoutingKey              string = "task.vton"
 	GrpcServerPort                  int32
+	WebhookAPIKey                   string
+	S3AccessKey                     string
+	S3AccessID                      string
+	S3Region                        string
+	S3BucketName                    string
+	S3Endpoint                      string
+	FASHNAIVtonWebhook              string
+	FASHN_AI_API_KEY                string
 )
 
 func init() {
@@ -81,6 +91,14 @@ func init() {
 	ShopifyAPPScopes = viper.GetString("SHOPIFY_APP_SCOPES")
 	RabbitMQConnectionUrl = viper.GetString("RABBITMQ_CONNECTION_URI")
 	GrpcServerPort = int32(viper.GetInt("GRPC_SERVER_PORT"))
+	WebhookAPIKey = viper.GetString("WEBHOOK_API_KEY")
+	S3AccessKey = viper.GetString("S3_ACCESS_KEY")
+	S3AccessID = viper.GetString("S3_ACCESS_ID")
+	S3Region = viper.GetString("S3_REGION")
+	S3BucketName = viper.GetString("S3_BUCKET")
+	S3Endpoint = viper.GetString("S3_ENDPOINT")
+	FASHNAIVtonWebhook = viper.GetString("FASHN_AI_VTON_WEBHOOK_URL")
+	FASHN_AI_API_KEY = viper.GetString("FASHN_AI_API_KEY")
 }
 
 func loadConfig() {

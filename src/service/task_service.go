@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/mbbipul/prodigyai-backend/src/config"
 	"github.com/mbbipul/prodigyai-backend/src/model"
 	"github.com/mbbipul/prodigyai-backend/src/utils"
 	"github.com/mbbipul/prodigyai-backend/src/validation"
@@ -17,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type TaskService interface {
@@ -102,25 +106,41 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
+	} else if newTask.Type == model.TaskTypeVTon {
+		var inputData validation.VTONTaskInput
+		inputBytes, err := json.Marshal(newTask.InputData)
+		if err != nil {
+			t.Log.Errorf("Failed to marshal input data: %+v", err)
+			return nil, errors.New("invalid input data format")
+		}
+		if err := json.Unmarshal(inputBytes, &inputData); err != nil {
+			t.Log.Errorf("Failed to unmarshal input data into VTONTaskInput: %+v", err)
+			return nil, errors.New("invalid input data structure")
+		}
+		return t.NewVTONTask(c, &validation.NewTask[validation.VTONTaskInput]{
+			Type:      newTask.Type,
+			InputData: inputData,
+		})
 	}
 
 	return nil, errors.New("unsupported task type")
 }
 
-func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.NewTask[validation.RemoveBackgroundTaskInput]) (*model.Task, error) {
+func (t *taskService) createTask(c *fiber.Ctx, newTask any, taskType model.TaskType, publisherFunc func() (rabbitmq.BasePublisher, error)) (*model.Task, error) {
+	t.Log.Printf("Creating task of type %v", taskType)
 
 	if err := t.Validate.Struct(newTask); err != nil {
 		t.Log.Errorf("Validation error: %+v", err)
 		return nil, err
 	}
 
-	inputData, err := json.Marshal(newTask.InputData)
+	inputData, err := json.Marshal(newTask)
 	if err != nil {
 		t.Log.Errorf("Failed to marshal input data: %+v", err)
 		return nil, err
 	}
 	task := &model.Task{
-		Type:      model.TaskTypeRemoveBackground,
+		Type:      taskType,
 		InputData: datatypes.JSON(inputData),
 		UserID:    c.Locals("user").(*model.User).ID,
 	}
@@ -129,11 +149,13 @@ func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
 	}
-	publisher, err := rabbitmq.RemoveBackgroundTaskPublisher()
+
+	publisher, err := publisherFunc()
 	if err != nil {
 		t.Log.Errorf("Failed to create publisher: %+v", err)
 		return nil, err
 	}
+
 	err = t.PublishTask(c, publisher, task)
 	if err != nil {
 		t.Log.Errorf("Failed to publish task: %+v", err)
@@ -141,12 +163,8 @@ func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.
 	}
 
 	taskID := task.ID
-
 	go func(id uuid.UUID) {
-		// Create a new background context
 		ctx := context.Background()
-
-		// Update status in a separate transaction
 		err := t.DB.WithContext(ctx).
 			Model(&model.Task{}).
 			Where("id = ?", id).
@@ -159,71 +177,29 @@ func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.
 	}(taskID)
 
 	return task, nil
+}
+
+func (t *taskService) NewRemoveBackgroundTask(c *fiber.Ctx, newTask *validation.NewTask[validation.RemoveBackgroundTaskInput]) (*model.Task, error) {
+	return t.createTask(c, newTask.InputData, model.TaskTypeRemoveBackground, rabbitmq.RemoveBackgroundTaskPublisher)
 }
 
 func (t *taskService) NewReplaceBackgroundTask(c *fiber.Ctx, newTask *validation.NewTask[validation.ReplaceBackgroundTaskInput]) (*model.Task, error) {
-
-	t.Log.Printf("Creating NewReplaceBackgroundTask")
-	if err := t.Validate.Struct(newTask); err != nil {
-		t.Log.Errorf("Validation error: %+v", err)
-		return nil, err
-	}
-
-	inputData, err := json.Marshal(newTask.InputData)
-	if err != nil {
-		t.Log.Errorf("Failed to marshal input data: %+v", err)
-		return nil, err
-	}
-	task := &model.Task{
-		Type:      newTask.Type,
-		InputData: datatypes.JSON(inputData),
-		UserID:    c.Locals("user").(*model.User).ID,
-	}
-
-	if err := t.DB.WithContext(c.Context()).Create(task).Error; err != nil {
-		t.Log.Errorf("Failed to create task: %+v", err)
-		return nil, err
-	}
-	publisher, err := rabbitmq.ReplaceBackgroundTaskPublisher()
-	if err != nil {
-		t.Log.Errorf("Failed to create publisher: %+v", err)
-		return nil, err
-	}
-	err = t.PublishTask(c, publisher, task)
-	if err != nil {
-		t.Log.Errorf("Failed to publish task: %+v", err)
-		return nil, err
-	}
-
-	taskID := task.ID
-
-	go func(id uuid.UUID) {
-		// Create a new background context
-		ctx := context.Background()
-
-		// Update status in a separate transaction
-		err := t.DB.WithContext(ctx).
-			Model(&model.Task{}).
-			Where("id = ?", id).
-			Update("status", model.TaskStatusQueued).
-			Error
-
-		if err != nil {
-			t.Log.Errorf("Failed to update task status: %+v", err)
-		}
-	}(taskID)
-
-	return task, nil
+	return t.createTask(c, newTask.InputData, model.TaskTypeReplaceBackground, rabbitmq.ReplaceBackgroundTaskPublisher)
 }
 
 func (t *taskService) NewGenerateAIModelTask(c *fiber.Ctx, newTask *validation.NewTask[validation.GenerateAIModelTaskInput]) (*model.Task, error) {
-	t.Log.Printf("Creating NewGenerateAIModelTask")
+	return t.createTask(c, newTask.InputData, model.TaskTypeGenerateAIModel, rabbitmq.GenerateAIModelTaskPublisher)
+}
+
+func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[validation.VTONTaskInput]) (*model.Task, error) {
+	t.Log.Printf("Creating task of type %v", newTask.Type)
+
 	if err := t.Validate.Struct(newTask); err != nil {
 		t.Log.Errorf("Validation error: %+v", err)
 		return nil, err
 	}
 
-	inputData, err := json.Marshal(newTask.InputData)
+	inputData, err := json.Marshal(newTask)
 	if err != nil {
 		t.Log.Errorf("Failed to marshal input data: %+v", err)
 		return nil, err
@@ -238,36 +214,51 @@ func (t *taskService) NewGenerateAIModelTask(c *fiber.Ctx, newTask *validation.N
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
 	}
-	publisher, err := rabbitmq.GenerateAIModelTaskPublisher()
+	fashn := NewFashnAIVirtualTryOn(config.FASHN_AI_API_KEY, t.Log)
+	responseData, err := fashn.VirtualTryOn(c.Context(), task.ID, newTask.InputData)
 	if err != nil {
-		t.Log.Errorf("Failed to create publisher: %+v", err)
-		return nil, err
-	}
-	err = t.PublishTask(c, publisher, task)
-	if err != nil {
-		t.Log.Errorf("Failed to publish task: %+v", err)
-		return nil, err
-	}
-
-	taskID := task.ID
-
-	go func(id uuid.UUID) {
-		// Create a new background context
-		ctx := context.Background()
-
-		// Update status in a separate transaction
-		err := t.DB.WithContext(ctx).
-			Model(&model.Task{}).
-			Where("id = ?", id).
-			Update("status", model.TaskStatusQueued).
-			Error
-
-		if err != nil {
+		t.Log.Errorf("VTON failed: %+v", err)
+		if err := t.DB.WithContext(c.Context()).Model(task).Where("id = ?", task.ID).Updates(model.Task{
+			Status: model.TaskStatusFailed,
+		}).Error; err != nil {
 			t.Log.Errorf("Failed to update task status: %+v", err)
 		}
-	}(taskID)
+		return nil, err
+	}
+	jobID := responseData.ID
 
-	return task, nil
+	resultMap := map[string]interface{}{
+		"jobId":          jobID,
+		"status":         responseData.Status,
+		"output":         responseData.Output,
+		"outputImageUrl": responseData.Output,
+		"error":          responseData.Error,
+	}
+
+	resultBytes, err := json.Marshal(resultMap)
+	if err != nil {
+		if err := t.DB.WithContext(c.Context()).Model(task).Where("id = ?", task.ID).Updates(model.Task{
+			Status: model.TaskStatusFailed,
+		}).Error; err != nil {
+			t.Log.Errorf("Failed to update task status: %+v", err)
+		}
+		return nil, fmt.Errorf("failed to marshal result data: %w", err)
+	}
+
+	resultData := (*datatypes.JSON)(&resultBytes)
+
+	taskObj := new(model.Task)
+	taskObj.ID = task.ID
+	taskObj.ResultData = resultData
+	now := time.Now()
+	taskObj.StartedAt = &now
+
+	if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
+		fmt.Printf("Failed to update task: %+v", err)
+		return nil, err
+	}
+
+	return taskObj, nil
 }
 
 func (t *taskService) PublishTask(c *fiber.Ctx, publisher rabbitmq.BasePublisher, task *model.Task) error {
