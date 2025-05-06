@@ -111,7 +111,7 @@ func (s *aIModelService) GetAIModels(c *fiber.Ctx) ([]model.AIModel, error) {
 	if userId == uuid.Nil {
 		return aiModels, nil
 	}
-	err := s.DB.WithContext(c.Context()).Find(&aiModels).Where(&model.AIModel{UserID: &userId}).Order("created_at DESC").Error
+	err := s.DB.WithContext(c.Context()).Where(&model.AIModel{UserID: &userId}).Order("created_at DESC").Find(&aiModels).Error
 	return aiModels, err
 }
 

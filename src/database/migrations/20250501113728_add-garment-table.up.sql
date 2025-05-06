@@ -10,7 +10,7 @@ CREATE TABLE garments (
     id UUID PRIMARY KEY NOT NULL,
     outfit_type garment_outfit_type_enum NOT NULL,
     color VARCHAR(50) NOT NULL,
-    image_url VARCHAR(255) NOT NULL,
+    image_url TEXT NOT NULL,
     tags VARCHAR(255) NOT NULL,
     user_id UUID,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,

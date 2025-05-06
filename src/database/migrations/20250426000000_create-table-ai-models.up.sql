@@ -28,7 +28,7 @@ CREATE TABLE ai_models (
     override_parameters BOOLEAN DEFAULT FALSE,
     user_id UUID,
     task_id UUID,
-    model_image_url VARCHAR(255),
+    model_image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id),
