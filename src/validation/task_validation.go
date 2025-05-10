@@ -54,12 +54,12 @@ type VTONTaskInput struct {
 }
 
 type UpscaleTaskInput struct {
-	SourceImageUrl  string          `json:"sourceImageUrl" validate:"required" example:"https://example.com/image.jpg"`
-	Scale           string          `json:"scale" validate:"required,oneof=2x 4x" example:"2x"`
+	SourceImageUrl string `json:"sourceImageUrl" validate:"required" example:"https://example.com/image.jpg"`
+	// Scale           string          `json:"scale" validate:"required,oneof=2x 4x" example:"2x"`
 	ImageSourceType ImageSourceType `json:"imageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
 }
 
 type NewTask[T any] struct {
-	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE" example:"REMOVE_BACKGROUND"`
+	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE ENHANCE" example:"REMOVE_BACKGROUND"`
 	InputData T              `json:"inputData" validate:"required" example:"{\"key\": \"value\"}"`
 }

@@ -123,7 +123,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeUpscale {
+	} else if newTask.Type == model.TaskTypeUpscale || newTask.Type == model.TaskTypeEnhance {
 		var inputData validation.UpscaleTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {
@@ -211,7 +211,7 @@ func (t *taskService) NewGenerateAIModelTask(c *fiber.Ctx, newTask *validation.N
 }
 
 func (t *taskService) NewUpscaleTask(c *fiber.Ctx, newTask *validation.NewTask[validation.UpscaleTaskInput]) (*model.Task, error) {
-	task, err := t.createTask(c, newTask.InputData, model.TaskTypeUpscale, nil)
+	task, err := t.createTask(c, newTask.InputData, newTask.Type, nil)
 	if err != nil {
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
@@ -226,61 +226,17 @@ func (t *taskService) NewUpscaleTask(c *fiber.Ctx, newTask *validation.NewTask[v
 
 		webhookUrl := config.WebhookBaseURL + "/cloudinary/" + config.WebhookAPIKey + "/" + taskId.String()
 		fmt.Println("Webhook URL:", webhookUrl)
+		transformation := "e_upscale"
+		if newTask.Type == model.TaskTypeEnhance {
+			transformation = "e_enhance"
+		}
 
-		location, err := cloudinaryapi.UploadImageToCloudinary(sourceImageUrl, taskId.String(), "e_upscale", webhookUrl, ctx)
+		location, err := cloudinaryapi.UploadImageToCloudinary(sourceImageUrl, taskId.String(), transformation, webhookUrl, ctx)
 		if err != nil {
 			t.Log.Errorf("Failed to upload image to Cloudinary: %+v", err)
 			return
 		}
 		fmt.Println("Cloudinary location:", *location)
-
-		// downloader := downloader.BuildDownloader(transformedUrl)
-		// if downloader == nil {
-		// 	return
-		// }
-
-		// key := "upscale/" + task.ID.String() + ".png"
-		// err = cloudinaryapi.SaveImageToS3(ctime, transformedUrl, config.S3BucketName, key)
-		// if err != nil {
-		// 	t.Log.Errorf("Failed to upload image to S3: %+v", err)
-		// 	return
-		// }
-		// resultMap := map[string]interface{}{
-		// 	"outputImageUrl": "s3://" + config.S3BucketName + "/" + key,
-		// }
-		// resultBytes, err := json.Marshal(resultMap)
-		// if err != nil {
-		// 	if err := t.DB.WithContext(ctime).Model(task).Where("id = ?", task.ID).Updates(model.Task{
-		// 		Status: model.TaskStatusFailed,
-		// 	}).Error; err != nil {
-		// 		t.Log.Errorf("Failed to update task status: %+v", err)
-		// 	}
-		// 	return
-		// }
-
-		// resultData := (*datatypes.JSON)(&resultBytes)
-
-		// taskObj := new(model.Task)
-		// taskObj.ID = taskId
-		// taskObj.ResultData = resultData
-		// taskObj.Status = model.TaskStatusSucceeded
-		// now := time.Now()
-		// taskObj.CompletedAt = &now
-
-		// if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
-		// 	fmt.Printf("Failed to update task: %+v", err)
-		// 	return
-		// }
-		// err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress", map[string]any{
-		// 	"id":         taskObj.ID,
-		// 	"type":       taskObj.Type,
-		// 	"status":     taskObj.Status,
-		// 	"resultData": taskObj.ResultData,
-		// })
-		// if err != nil {
-		// 	fmt.Printf("Failed to emit event to user: %+v", err)
-		// }
-
 	}(task.ID, newTask.InputData.SourceImageUrl)
 	return task, nil
 }

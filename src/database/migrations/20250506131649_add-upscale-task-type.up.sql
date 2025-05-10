@@ -1,1 +1,2 @@
 ALTER TYPE task_type_enum ADD VALUE 'UPSCALE';
+ALTER TYPE task_type_enum ADD VALUE 'ENHANCE';

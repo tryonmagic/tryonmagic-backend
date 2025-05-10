@@ -28,6 +28,7 @@ const (
 	TaskTypeGenerateAIModel TaskType = "GENERATE_AI_MODEL"
 	TaskTypeVTon            TaskType = "VTON"
 	TaskTypeUpscale         TaskType = "UPSCALE"
+	TaskTypeEnhance         TaskType = "ENHANCE"
 )
 
 type Task struct {
