@@ -3,22 +3,17 @@ package service
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/internal/adapter/s3"
 	"github.com/mbbipul/prodigyai-backend/src/model"
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/prodigyai-backend/src/pkg/downloader"
 	"github.com/mbbipul/prodigyai-backend/src/validation"
 	"github.com/sirupsen/logrus"
 )
@@ -98,20 +93,6 @@ func NewFashnAIVirtualTryOn(apiKey string, log *logrus.Logger) *FashnAIVirtualTr
 	}
 }
 
-func getImagePresignedURL(ctx context.Context, imagePath string) (string, error) {
-	fmt.Println("Getting presigned URL for image:", imagePath)
-	s3Presigner := s3.NewPresigner()
-	bucketName, imageKey := utils.ParseS3URL(imagePath)
-	fmt.Printf("getImagePresignedURL: Bucket: %s, Key: %s\n", bucketName, imageKey)
-
-	url, err := s3Presigner.GetObject(ctx, bucketName, imageKey, 3600*24*4)
-	fmt.Printf("getImagePresignedURL: Presigned URL: %s\n", url)
-	if err != nil {
-		return "", fmt.Errorf("failed to get presigned URL for image: %w", err)
-	}
-	return url, nil
-}
-
 func (f *FashnAIVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID, vtonTask validation.VTONTaskInput) (*FashnAIVtonResponseData, error) {
 	if f.Skip {
 		return nil, fmt.Errorf("Virtual try-on skip not implemented")
@@ -150,7 +131,7 @@ func (f *FashnAIVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID
 	}
 
 	jobUrl := f.FashnBaseURL + "/run"
-	webhook_url := config.FASHNAIVtonWebhook + "/" + config.WebhookAPIKey + "/" + taskId.String()
+	webhook_url := config.WebhookBaseURL + "/fashnai-vton/" + config.WebhookAPIKey + "/" + taskId.String()
 	jobUrl += "?webhook_url=" + webhook_url
 	req, err := http.NewRequest("POST", jobUrl, bytes.NewBuffer(payloadBytes))
 	if err != nil {
@@ -181,29 +162,7 @@ func (f *FashnAIVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID
 }
 
 func (f *FashnAIVirtualTryOn) GetImageFromSource(ctx context.Context, imageSource string) (string, error) {
-
-	if strings.HasPrefix(imageSource, "s3://") {
-		return getImagePresignedURL(ctx, imageSource)
-	} else if strings.HasPrefix(imageSource, "http://") || strings.HasPrefix(imageSource, "https://") {
-		return imageSource, nil
-	} else if strings.HasPrefix(imageSource, "data:image/") {
-		return imageSource, nil
-	}
-
-	if _, err := os.Stat(imageSource); err == nil {
-		file, err := os.Open(imageSource)
-		if err != nil {
-			log.Fatalf("failed to open file: %v", err)
-		}
-		defer file.Close()
-
-		fileBytes, err := io.ReadAll(file)
-		if err != nil {
-			log.Fatalf("failed to read file: %v", err)
-		}
-		return "data:image/png;base64," + base64.StdEncoding.EncodeToString(fileBytes), nil
-	}
-	return "", fmt.Errorf("invalid image source: %s", imageSource)
+	return downloader.GetImageFromSource(ctx, imageSource)
 }
 
 func (f *FashnAIVirtualTryOn) GetJobStatus(jobID string) (map[string]interface{}, error) {

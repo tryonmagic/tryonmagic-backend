@@ -2,6 +2,7 @@
 	"makefile.configureOnOpen": false,
 	"cSpell.words": [
 		"amqp",
+		"cloudinaryapi",
 		"datatypes",
 		"Fashn",
 		"fashnai",

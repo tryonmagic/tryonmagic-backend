@@ -14,4 +14,6 @@ func WebhookRoutes(v1 fiber.Router, w service.WebhookService) {
 	webhooks := v1.Group("/webhooks")
 
 	webhooks.Post("/fashnai-vton/:apiKey/:taskID", m.WebhookAuth(), webhookController.FashnAIVTonWebhook)
+	webhooks.Post("/cloudinary/:apiKey/:taskID", m.WebhookAuth(), webhookController.CloudinaryWebhook)
+
 }

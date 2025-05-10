@@ -41,6 +41,8 @@ var (
 	GenerateAIModelTaskRoutingKey   string = "task.generate_ai_model"
 	VTONTaskQueueName               string = "queue.vton"
 	VTONTaskRoutingKey              string = "task.vton"
+	UpscaleTaskQueueName            string = "queue.upscale"
+	UpscaleTaskRoutingKey           string = "task.upscale"
 	GrpcServerPort                  int32
 	WebhookAPIKey                   string
 	S3AccessKey                     string
@@ -48,7 +50,7 @@ var (
 	S3Region                        string
 	S3BucketName                    string
 	S3Endpoint                      string
-	FASHNAIVtonWebhook              string
+	WebhookBaseURL                  string
 	FASHN_AI_API_KEY                string
 )
 
@@ -97,7 +99,7 @@ func init() {
 	S3Region = viper.GetString("S3_REGION")
 	S3BucketName = viper.GetString("S3_BUCKET")
 	S3Endpoint = viper.GetString("S3_ENDPOINT")
-	FASHNAIVtonWebhook = viper.GetString("FASHN_AI_VTON_WEBHOOK_URL")
+	WebhookBaseURL = viper.GetString("WEBHOOK_BASE_URL")
 	FASHN_AI_API_KEY = viper.GetString("FASHN_AI_API_KEY")
 }
 

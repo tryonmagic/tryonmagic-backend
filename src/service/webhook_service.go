@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mbbipul/prodigyai-backend/src/config"
 	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/pkg/cloudinaryapi"
 	"github.com/mbbipul/prodigyai-backend/src/pkg/downloader"
 	"github.com/mbbipul/prodigyai-backend/src/utils"
 
@@ -29,6 +30,7 @@ import (
 
 type WebhookService interface {
 	FashnAIVTonWebhook(c *fiber.Ctx, taskId uuid.UUID, responseData FashnAIVtonResponseData) error
+	CloudinaryWebhook(c context.Context, taskId uuid.UUID, responseData cloudinaryapi.CloudinaryResponse) error
 }
 
 type webhookService struct {
@@ -88,6 +90,79 @@ func (t *webhookService) FashnAIVTonWebhook(c *fiber.Ctx, taskId uuid.UUID, resp
 	}
 
 	go t.processOutputImagesAsync(taskObj, responseData.Output)
+
+	return nil
+}
+
+func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, responseData cloudinaryapi.CloudinaryResponse) error {
+	transformedUrl, err := cloudinaryapi.TransformImage(taskId.String(), "e_upscale")
+	if err != nil {
+		t.Log.Errorf("Failed to transform image: %+v", err)
+		return err
+	}
+	downloader := downloader.BuildDownloader(transformedUrl)
+	if downloader == nil {
+		return fmt.Errorf("failed to build downloader for url: %s", transformedUrl)
+	}
+
+	key := "upscale/" + taskId.String() + ".png"
+	err = cloudinaryapi.SaveImageToS3(c, transformedUrl, config.S3BucketName, key)
+	if err != nil {
+		t.Log.Errorf("Failed to upload image to S3: %+v", err)
+		return err
+	}
+	resultMap := map[string]interface{}{
+		"outputImageUrl": "s3://" + config.S3BucketName + "/" + key,
+	}
+	resultBytes, err := json.Marshal(resultMap)
+	taskObj := new(model.Task)
+	taskObj.ID = taskId
+
+	if err != nil {
+		if err := t.DB.WithContext(c).Model(taskObj).Where("id = ?", taskObj.ID).Updates(model.Task{
+			Status: model.TaskStatusFailed,
+		}).Error; err != nil {
+			t.Log.Errorf("Failed to update task status: %+v", err)
+		}
+		return err
+	}
+
+	resultData := (*datatypes.JSON)(&resultBytes)
+
+	taskObj.ResultData = resultData
+	taskObj.Status = model.TaskStatusSucceeded
+	now := time.Now()
+	taskObj.CompletedAt = &now
+
+	if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
+		fmt.Printf("Failed to update task: %+v", err)
+		return err
+	}
+	err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress", map[string]any{
+		"id":         taskObj.ID,
+		"type":       taskObj.Type,
+		"status":     taskObj.Status,
+		"resultData": taskObj.ResultData,
+	})
+	if err != nil {
+		fmt.Printf("Failed to emit event to user: %+v", err)
+	}
+
+	if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
+		fmt.Printf("Failed to update task: %+v", err)
+		return err
+	}
+	err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress", map[string]any{
+		"id":         taskObj.ID,
+		"type":       taskObj.Type,
+		"status":     taskObj.Status,
+		"resultData": taskObj.ResultData,
+	})
+	if err != nil {
+		t.Log.Errorf("Failed to emit CloudinaryWebhook task-progress event: %v", err)
+	} else {
+		t.Log.Infof("Emitted CloudinaryWebhook task-progress event to user: %s", taskObj.UserID.String())
+	}
 
 	return nil
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/mbbipul/prodigyai-backend/src/config"
 	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/prodigyai-backend/src/pkg/cloudinaryapi"
+	"github.com/mbbipul/prodigyai-backend/src/pkg/downloader"
 	"github.com/mbbipul/prodigyai-backend/src/utils"
 	"github.com/mbbipul/prodigyai-backend/src/validation"
 
@@ -121,6 +123,21 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
+	} else if newTask.Type == model.TaskTypeUpscale {
+		var inputData validation.UpscaleTaskInput
+		inputBytes, err := json.Marshal(newTask.InputData)
+		if err != nil {
+			t.Log.Errorf("Failed to marshal input data: %+v", err)
+			return nil, errors.New("invalid input data format")
+		}
+		if err := json.Unmarshal(inputBytes, &inputData); err != nil {
+			t.Log.Errorf("Failed to unmarshal input data into UpscaleTaskInput: %+v", err)
+			return nil, errors.New("invalid input data structure")
+		}
+		return t.NewUpscaleTask(c, &validation.NewTask[validation.UpscaleTaskInput]{
+			Type:      newTask.Type,
+			InputData: inputData,
+		})
 	}
 
 	return nil, errors.New("unsupported task type")
@@ -150,31 +167,33 @@ func (t *taskService) createTask(c *fiber.Ctx, newTask any, taskType model.TaskT
 		return nil, err
 	}
 
-	publisher, err := publisherFunc()
-	if err != nil {
-		t.Log.Errorf("Failed to create publisher: %+v", err)
-		return nil, err
-	}
-
-	err = t.PublishTask(c, publisher, task)
-	if err != nil {
-		t.Log.Errorf("Failed to publish task: %+v", err)
-		return nil, err
-	}
-
-	taskID := task.ID
-	go func(id uuid.UUID) {
-		ctx := context.Background()
-		err := t.DB.WithContext(ctx).
-			Model(&model.Task{}).
-			Where("id = ?", id).
-			Update("status", model.TaskStatusQueued).
-			Error
-
+	if publisherFunc != nil {
+		publisher, err := publisherFunc()
 		if err != nil {
-			t.Log.Errorf("Failed to update task status: %+v", err)
+			t.Log.Errorf("Failed to create publisher: %+v", err)
+			return nil, err
 		}
-	}(taskID)
+
+		err = t.PublishTask(c, publisher, task)
+		if err != nil {
+			t.Log.Errorf("Failed to publish task: %+v", err)
+			return nil, err
+		}
+
+		taskID := task.ID
+		go func(id uuid.UUID) {
+			ctx := context.Background()
+			err := t.DB.WithContext(ctx).
+				Model(&model.Task{}).
+				Where("id = ?", id).
+				Update("status", model.TaskStatusQueued).
+				Error
+
+			if err != nil {
+				t.Log.Errorf("Failed to update task status: %+v", err)
+			}
+		}(taskID)
+	}
 
 	return task, nil
 }
@@ -189,6 +208,81 @@ func (t *taskService) NewReplaceBackgroundTask(c *fiber.Ctx, newTask *validation
 
 func (t *taskService) NewGenerateAIModelTask(c *fiber.Ctx, newTask *validation.NewTask[validation.GenerateAIModelTaskInput]) (*model.Task, error) {
 	return t.createTask(c, newTask.InputData, model.TaskTypeGenerateAIModel, rabbitmq.GenerateAIModelTaskPublisher)
+}
+
+func (t *taskService) NewUpscaleTask(c *fiber.Ctx, newTask *validation.NewTask[validation.UpscaleTaskInput]) (*model.Task, error) {
+	task, err := t.createTask(c, newTask.InputData, model.TaskTypeUpscale, nil)
+	if err != nil {
+		t.Log.Errorf("Failed to create task: %+v", err)
+		return nil, err
+	}
+	func(taskId uuid.UUID, sourceImage string) {
+		ctx := c.Context()
+		sourceImageUrl, err := downloader.GetImageFromSource(ctx, sourceImage)
+		if err != nil {
+			t.Log.Errorf("Failed to get image URL for source image: %v", err)
+			return
+		}
+
+		webhookUrl := config.WebhookBaseURL + "/cloudinary/" + config.WebhookAPIKey + "/" + taskId.String()
+		fmt.Println("Webhook URL:", webhookUrl)
+
+		location, err := cloudinaryapi.UploadImageToCloudinary(sourceImageUrl, taskId.String(), "e_upscale", webhookUrl, ctx)
+		if err != nil {
+			t.Log.Errorf("Failed to upload image to Cloudinary: %+v", err)
+			return
+		}
+		fmt.Println("Cloudinary location:", *location)
+
+		// downloader := downloader.BuildDownloader(transformedUrl)
+		// if downloader == nil {
+		// 	return
+		// }
+
+		// key := "upscale/" + task.ID.String() + ".png"
+		// err = cloudinaryapi.SaveImageToS3(ctime, transformedUrl, config.S3BucketName, key)
+		// if err != nil {
+		// 	t.Log.Errorf("Failed to upload image to S3: %+v", err)
+		// 	return
+		// }
+		// resultMap := map[string]interface{}{
+		// 	"outputImageUrl": "s3://" + config.S3BucketName + "/" + key,
+		// }
+		// resultBytes, err := json.Marshal(resultMap)
+		// if err != nil {
+		// 	if err := t.DB.WithContext(ctime).Model(task).Where("id = ?", task.ID).Updates(model.Task{
+		// 		Status: model.TaskStatusFailed,
+		// 	}).Error; err != nil {
+		// 		t.Log.Errorf("Failed to update task status: %+v", err)
+		// 	}
+		// 	return
+		// }
+
+		// resultData := (*datatypes.JSON)(&resultBytes)
+
+		// taskObj := new(model.Task)
+		// taskObj.ID = taskId
+		// taskObj.ResultData = resultData
+		// taskObj.Status = model.TaskStatusSucceeded
+		// now := time.Now()
+		// taskObj.CompletedAt = &now
+
+		// if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
+		// 	fmt.Printf("Failed to update task: %+v", err)
+		// 	return
+		// }
+		// err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress", map[string]any{
+		// 	"id":         taskObj.ID,
+		// 	"type":       taskObj.Type,
+		// 	"status":     taskObj.Status,
+		// 	"resultData": taskObj.ResultData,
+		// })
+		// if err != nil {
+		// 	fmt.Printf("Failed to emit event to user: %+v", err)
+		// }
+
+	}(task.ID, newTask.InputData.SourceImageUrl)
+	return task, nil
 }
 
 func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[validation.VTONTaskInput]) (*model.Task, error) {
