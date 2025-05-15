@@ -23,6 +23,8 @@ func NewWebhookControllerr(webhookService service.WebhookService) *WebhookContro
 }
 
 func (w *WebhookController) FashnAIVTonWebhook(c *fiber.Ctx) error {
+	body := c.Body()
+	fmt.Printf("FashnAIVTonWebhook body: %v", string(body))
 
 	req := new(service.FashnAIVtonResponseData)
 

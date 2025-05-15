@@ -145,20 +145,6 @@ func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, 
 		"resultData": taskObj.ResultData,
 	})
 	if err != nil {
-		fmt.Printf("Failed to emit event to user: %+v", err)
-	}
-
-	if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
-		fmt.Printf("Failed to update task: %+v", err)
-		return err
-	}
-	err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress", map[string]any{
-		"id":         taskObj.ID,
-		"type":       taskObj.Type,
-		"status":     taskObj.Status,
-		"resultData": taskObj.ResultData,
-	})
-	if err != nil {
 		t.Log.Errorf("Failed to emit CloudinaryWebhook task-progress event: %v", err)
 	} else {
 		t.Log.Infof("Emitted CloudinaryWebhook task-progress event to user: %s", taskObj.UserID.String())

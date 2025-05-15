@@ -1,12 +1,10 @@
 package cloudinaryapi
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/cloudinary/cloudinary-go/v2/api"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	s3ada "github.com/mbbipul/prodigyai-backend/src/internal/adapter/s3"
@@ -94,18 +92,19 @@ func SaveImageToS3(ctx context.Context, imageUrl, bucket, key string) error {
 		return fmt.Errorf("failed to build downloader for url: %s", imageUrl)
 	}
 	writer := manager.NewWriteAtBuffer([]byte{})
-	s3Client := s3ada.GetS3Client()
+	// s3Client := s3ada.GetS3Client()
 
 	err := downloader.Download(imageUrl, writer)
 	if err != nil {
 		return fmt.Errorf("failed to download image: %w", err)
 	}
 	// upload the image to S3
-	_, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: &bucket,
-		Key:    &key,
-		Body:   bytes.NewReader(writer.Bytes()),
-	})
+	// _, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
+	// 	Bucket: &bucket,
+	// 	Key:    &key,
+	// 	Body:   bytes.NewReader(writer.Bytes()),
+	// })
+	_, err = s3ada.UploadFileToS3(ctx, writer, bucket, key)
 
 	return err
 }
