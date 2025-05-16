@@ -39,6 +39,8 @@ var (
 	ReplaceBackgroundTaskRoutingKey string = "task.background_replacement"
 	GenerateAIModelTaskQueueName    string = "queue.generate_ai_model"
 	GenerateAIModelTaskRoutingKey   string = "task.generate_ai_model"
+	ExpandImageTaskQueueName        string = "queue.expand_image"
+	ExpandImageTaskRoutingKey       string = "task.expand_image"
 	VTONTaskQueueName               string = "queue.vton"
 	VTONTaskRoutingKey              string = "task.vton"
 	UpscaleTaskQueueName            string = "queue.upscale"

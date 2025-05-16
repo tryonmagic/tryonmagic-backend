@@ -138,6 +138,21 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
+	} else if newTask.Type == model.TaskTypeExpandImage {
+		var inputData validation.ExpandImageTaskInput
+		inputBytes, err := json.Marshal(newTask.InputData)
+		if err != nil {
+			t.Log.Errorf("Failed to marshal input data: %+v", err)
+			return nil, errors.New("invalid input data format")
+		}
+		if err := json.Unmarshal(inputBytes, &inputData); err != nil {
+			t.Log.Errorf("Failed to unmarshal input data into ExpandImageTaskInput: %+v", err)
+			return nil, errors.New("invalid input data structure")
+		}
+		return t.NewExpandImageTask(c, &validation.NewTask[validation.ExpandImageTaskInput]{
+			Type:      newTask.Type,
+			InputData: inputData,
+		})
 	}
 
 	return nil, errors.New("unsupported task type")
@@ -309,6 +324,10 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 	}
 
 	return taskObj, nil
+}
+
+func (t *taskService) NewExpandImageTask(c *fiber.Ctx, newTask *validation.NewTask[validation.ExpandImageTaskInput]) (*model.Task, error) {
+	return t.createTask(c, newTask.InputData, model.TaskTypeExpandImage, rabbitmq.ExpandImageTaskPublisher)
 }
 
 func (t *taskService) PublishTask(c *fiber.Ctx, publisher rabbitmq.BasePublisher, task *model.Task) error {

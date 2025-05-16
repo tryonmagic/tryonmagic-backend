@@ -29,6 +29,7 @@ const (
 	TaskTypeVTon            TaskType = "VTON"
 	TaskTypeUpscale         TaskType = "UPSCALE"
 	TaskTypeEnhance         TaskType = "ENHANCE"
+	TaskTypeExpandImage     TaskType = "EXPAND_IMAGE"
 )
 
 type Task struct {
