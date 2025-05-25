@@ -30,7 +30,7 @@ import (
 
 type WebhookService interface {
 	FashnAIVTonWebhook(c *fiber.Ctx, taskId uuid.UUID, responseData FashnAIVtonResponseData) error
-	CloudinaryWebhook(c context.Context, taskId uuid.UUID, responseData cloudinaryapi.CloudinaryResponse) error
+	CloudinaryWebhook(c context.Context, taskId uuid.UUID, responseData cloudinaryapi.CloudinaryResponse, taskType string) error
 }
 
 type webhookService struct {
@@ -94,8 +94,13 @@ func (t *webhookService) FashnAIVTonWebhook(c *fiber.Ctx, taskId uuid.UUID, resp
 	return nil
 }
 
-func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, responseData cloudinaryapi.CloudinaryResponse) error {
-	transformedUrl, err := cloudinaryapi.TransformImage(taskId.String(), "e_upscale")
+func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, responseData cloudinaryapi.CloudinaryResponse, taskType string) error {
+
+	if len(responseData.Eager) == 0 {
+		return fmt.Errorf("no eager transformation found")
+	}
+	transformation := responseData.Eager[0].Transformation
+	transformedUrl, err := cloudinaryapi.TransformImage(taskId.String(), transformation)
 	if err != nil {
 		t.Log.Errorf("Failed to transform image: %+v", err)
 		return err

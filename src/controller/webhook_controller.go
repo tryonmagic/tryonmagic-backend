@@ -78,7 +78,8 @@ func (w *WebhookController) CloudinaryWebhook(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid taskId format")
 	}
 	fmt.Printf("CloudinaryWebhook taskId: %v", taskUUID)
-	err = w.WebhookService.CloudinaryWebhook(c.Context(), taskUUID, *req)
+	taskType := c.Query("taskType")
+	err = w.WebhookService.CloudinaryWebhook(c.Context(), taskUUID, *req, taskType)
 	if err != nil {
 		return err
 	}

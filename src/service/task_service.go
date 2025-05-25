@@ -153,6 +153,21 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
+	} else if newTask.Type == model.TaskTypeEditImage {
+		var inputData validation.EditImageTaskInput
+		inputBytes, err := json.Marshal(newTask.InputData)
+		if err != nil {
+			t.Log.Errorf("Failed to marshal input data: %+v", err)
+			return nil, errors.New("invalid input data format")
+		}
+		if err := json.Unmarshal(inputBytes, &inputData); err != nil {
+			t.Log.Errorf("Failed to unmarshal input data into EditImageTaskInput: %+v", err)
+			return nil, errors.New("invalid input data structure")
+		}
+		return t.NewEditImageTask(c, &validation.NewTask[validation.EditImageTaskInput]{
+			Type:      newTask.Type,
+			InputData: inputData,
+		})
 	}
 
 	return nil, errors.New("unsupported task type")
@@ -231,28 +246,27 @@ func (t *taskService) NewUpscaleTask(c *fiber.Ctx, newTask *validation.NewTask[v
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
 	}
-	func(taskId uuid.UUID, sourceImage string) {
-		ctx := c.Context()
-		sourceImageUrl, err := downloader.GetImageFromSource(ctx, sourceImage)
-		if err != nil {
-			t.Log.Errorf("Failed to get image URL for source image: %v", err)
-			return
-		}
 
-		webhookUrl := config.WebhookBaseURL + "/cloudinary/" + config.WebhookAPIKey + "/" + taskId.String()
-		fmt.Println("Webhook URL:", webhookUrl)
-		transformation := "e_upscale"
-		if newTask.Type == model.TaskTypeEnhance {
-			transformation = "e_enhance"
-		}
+	ctx := c.Context()
+	sourceImageUrl, err := downloader.GetImageFromSource(ctx, newTask.InputData.SourceImageUrl)
+	if err != nil {
+		t.Log.Errorf("Failed to get image URL for source image: %v", err)
+		return nil, err
+	}
 
-		location, err := cloudinaryapi.UploadImageToCloudinary(sourceImageUrl, taskId.String(), transformation, webhookUrl, ctx)
-		if err != nil {
-			t.Log.Errorf("Failed to upload image to Cloudinary: %+v", err)
-			return
-		}
-		fmt.Println("Cloudinary location:", *location)
-	}(task.ID, newTask.InputData.SourceImageUrl)
+	webhookUrl := config.WebhookBaseURL + "/cloudinary/" + config.WebhookAPIKey + "/" + task.ID.String()
+	fmt.Println("Webhook URL:", webhookUrl)
+	transformation := "e_upscale"
+	if newTask.Type == model.TaskTypeEnhance {
+		transformation = "e_enhance"
+	}
+
+	location, err := cloudinaryapi.UploadImageToCloudinary(sourceImageUrl, task.ID.String(), transformation, webhookUrl, ctx)
+	if err != nil {
+		t.Log.Errorf("Failed to upload image to Cloudinary: %+v", err)
+		return nil, err
+	}
+	fmt.Println("Cloudinary location:", *location)
 	return task, nil
 }
 
@@ -328,6 +342,45 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 
 func (t *taskService) NewExpandImageTask(c *fiber.Ctx, newTask *validation.NewTask[validation.ExpandImageTaskInput]) (*model.Task, error) {
 	return t.createTask(c, newTask.InputData, model.TaskTypeExpandImage, rabbitmq.ExpandImageTaskPublisher)
+}
+
+func (t *taskService) NewEditImageTask(c *fiber.Ctx, newTask *validation.NewTask[validation.EditImageTaskInput]) (*model.Task, error) {
+	if len(newTask.InputData.EditRegion) == 0 {
+		return t.NewEditImageTaskCloudinary(c, newTask)
+	}
+	return t.createTask(c, newTask.InputData, model.TaskTypeEditImage, rabbitmq.EditImageTaskPublisher)
+}
+
+func (t *taskService) NewEditImageTaskCloudinary(c *fiber.Ctx, newTask *validation.NewTask[validation.EditImageTaskInput]) (*model.Task, error) {
+	task, err := t.createTask(c, newTask.InputData, newTask.Type, nil)
+	if err != nil {
+		t.Log.Errorf("Failed to create task: %+v", err)
+		return nil, err
+	}
+	ctx := c.Context()
+	sourceImageUrl, err := downloader.GetImageFromSource(ctx, newTask.InputData.SourceImageUrl)
+	if err != nil {
+		t.Log.Errorf("Failed to get image URL for source image: %v", err)
+		return nil, err
+	}
+
+	webhookUrl := config.WebhookBaseURL + "/cloudinary/" + config.WebhookAPIKey + "/" + task.ID.String() + "?taskType=" + string(newTask.Type)
+	fmt.Println("Webhook URL:", webhookUrl)
+	var transformation string
+	if newTask.InputData.EditType == validation.EditTypeInpaintRemove {
+		transformation = fmt.Sprintf("e_gen_remove:prompt_%s;multiple_true;remove-shadow_true", *newTask.InputData.EditPrompt)
+	}
+	if transformation == "" {
+		return nil, errors.New("invalid edit type")
+	}
+
+	location, err := cloudinaryapi.UploadImageToCloudinary(sourceImageUrl, task.ID.String(), transformation, webhookUrl, ctx)
+	if err != nil {
+		t.Log.Errorf("Failed to upload image to Cloudinary: %+v", err)
+		return nil, err
+	}
+	fmt.Println("Cloudinary location:", *location)
+	return task, nil
 }
 
 func (t *taskService) PublishTask(c *fiber.Ctx, publisher rabbitmq.BasePublisher, task *model.Task) error {

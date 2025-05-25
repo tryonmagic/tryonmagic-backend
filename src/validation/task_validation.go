@@ -5,6 +5,8 @@ import "github.com/mbbipul/prodigyai-backend/src/model"
 type ImageSourceType string
 type BackgroundSourceType string
 type InputData any
+type EditMode string
+type EditType string
 
 const (
 	ImageSourceTypeURL    ImageSourceType = "URL"
@@ -15,6 +17,17 @@ const (
 	BackgroundSourceTypeImage  BackgroundSourceType = "IMAGE"
 	BackgroundSourceTypeColor  BackgroundSourceType = "COLOR"
 	BackgroundSourceTypePrompt BackgroundSourceType = "PROMPT"
+)
+
+const (
+	EditModePrompt EditMode = "PROMPT"
+	EditModeRegion EditMode = "REGION"
+)
+
+const (
+	EditTypeInpaintRemove  EditType = "INPAINT_REMOVE"
+	EditTypeInpaintReplace EditType = "INPAINT_REPLACE"
+	EditTypeInpaintAdd     EditType = "INPAINT_ADD"
 )
 
 type RemoveBackgroundTaskInput struct {
@@ -59,8 +72,24 @@ type UpscaleTaskInput struct {
 	ImageSourceType ImageSourceType `json:"imageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
 }
 
+type EditRegion struct {
+	X      int `json:"x" validate:"required,min=0" example:"100"`
+	Y      int `json:"y" validate:"required,min=0" example:"100"`
+	Width  int `json:"width" validate:"required,min=1" example:"200"`
+	Height int `json:"height" validate:"required,min=1" example:"200"`
+}
+
+type EditImageTaskInput struct {
+	SourceImageUrl  string          `json:"sourceImageUrl" validate:"required" example:"https://example.com/image.jpg"`
+	ImageSourceType ImageSourceType `json:"imageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
+	EditType        EditType        `json:"editType" validate:"required,oneof=INPAINT_REMOVE INPAINT_REPLACE INPAINT_ADD" example:"INPAINT_REMOVE"`
+	EditMode        EditMode        `json:"editMode" validate:"required,oneof=PROMPT REGION" example:"PROMPT"`
+	EditPrompt      *string         `json:"editPrompt"  example:"A beautiful landscape"`
+	EditRegion      []EditRegion    `json:"editRegion"  example:"[{\"x\": 100, \"y\": 100, \"width\": 200, \"height\": 200}]"`
+}
+
 type NewTask[T any] struct {
-	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE ENHANCE EXPAND_IMAGE" example:"REMOVE_BACKGROUND"`
+	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE ENHANCE EXPAND_IMAGE EDIT_IMAGE" example:"REMOVE_BACKGROUND"`
 	InputData T              `json:"inputData" validate:"required" example:"{\"key\": \"value\"}"`
 }
 

@@ -56,12 +56,12 @@ func UploadImageToCloudinary(fileLocation string, destKey string, transformation
 
 	cld := Credentials()
 	uploadParams := uploader.UploadParams{
-		PublicID:        destKey,
-		UniqueFilename:  api.Bool(false),
-		Overwrite:       api.Bool(true),
-		Async:           api.Bool(true),
-		NotificationURL: webhookUrl,
-		Eager:           transformation,
+		PublicID:             destKey,
+		UniqueFilename:       api.Bool(false),
+		Overwrite:            api.Bool(true),
+		Eager:                transformation,
+		EagerAsync:           api.Bool(true),
+		EagerNotificationURL: webhookUrl,
 	}
 	resp, err := cld.Upload.Upload(ctx, fileLocation, uploadParams)
 	if err != nil {

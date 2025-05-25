@@ -45,6 +45,8 @@ var (
 	VTONTaskRoutingKey              string = "task.vton"
 	UpscaleTaskQueueName            string = "queue.upscale"
 	UpscaleTaskRoutingKey           string = "task.upscale"
+	EditImageTaskQueueName          string = "queue.edit_image"
+	EditImageTaskRoutingKey         string = "task.edit_image"
 	GrpcServerPort                  int32
 	WebhookAPIKey                   string
 	S3AccessKey                     string

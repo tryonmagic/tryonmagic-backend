@@ -30,6 +30,7 @@ const (
 	TaskTypeUpscale         TaskType = "UPSCALE"
 	TaskTypeEnhance         TaskType = "ENHANCE"
 	TaskTypeExpandImage     TaskType = "EXPAND_IMAGE"
+	TaskTypeEditImage       TaskType = "EDIT_IMAGE"
 )
 
 type Task struct {
