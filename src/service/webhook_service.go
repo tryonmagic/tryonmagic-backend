@@ -95,6 +95,7 @@ func (t *webhookService) FashnAIVTonWebhook(c *fiber.Ctx, taskId uuid.UUID, resp
 }
 
 func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, responseData cloudinaryapi.CloudinaryResponse, taskType string) error {
+	ctx := context.Background()
 
 	if len(responseData.Eager) == 0 {
 		return fmt.Errorf("no eager transformation found")
@@ -110,7 +111,7 @@ func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, 
 		return fmt.Errorf("failed to build downloader for url: %s", transformedUrl)
 	}
 
-	key := "upscale/" + taskId.String() + ".png"
+	key := taskType + "/" + taskId.String() + ".png"
 	err = cloudinaryapi.SaveImageToS3(c, transformedUrl, config.S3BucketName, key)
 	if err != nil {
 		t.Log.Errorf("Failed to upload image to S3: %+v", err)
@@ -124,7 +125,7 @@ func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, 
 	taskObj.ID = taskId
 
 	if err != nil {
-		if err := t.DB.WithContext(c).Model(taskObj).Where("id = ?", taskObj.ID).Updates(model.Task{
+		if err := t.DB.WithContext(ctx).Model(taskObj).Where("id = ?", taskObj.ID).Updates(model.Task{
 			Status: model.TaskStatusFailed,
 		}).Error; err != nil {
 			t.Log.Errorf("Failed to update task status: %+v", err)
@@ -139,7 +140,7 @@ func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, 
 	now := time.Now()
 	taskObj.CompletedAt = &now
 
-	if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
+	if err := t.DB.WithContext(ctx).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
 		fmt.Printf("Failed to update task: %+v", err)
 		return err
 	}

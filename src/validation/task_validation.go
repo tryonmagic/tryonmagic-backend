@@ -25,9 +25,9 @@ const (
 )
 
 const (
-	EditTypeInpaintRemove  EditType = "INPAINT_REMOVE"
-	EditTypeInpaintReplace EditType = "INPAINT_REPLACE"
-	EditTypeInpaintAdd     EditType = "INPAINT_ADD"
+	EditTypeInpaintRemove  EditType = "EDIT_MODE_INPAINT_REMOVAL"
+	EditTypeInpaintReplace EditType = "EDIT_MODE_INPAINT_REPLACE"
+	EditTypeInpaintAdd     EditType = "EDIT_MODE_INPAINT_INSERTION"
 )
 
 type RemoveBackgroundTaskInput struct {
@@ -79,13 +79,19 @@ type EditRegion struct {
 	Height int `json:"height" validate:"required,min=1" example:"200"`
 }
 
+type ReplacePrompt struct {
+	ReplaceFrom *string `json:"replaceFrom" example:"cat"`
+	ReplaceTo   string  `json:"replaceTo" example:"dog"`
+}
+
 type EditImageTaskInput struct {
 	SourceImageUrl  string          `json:"sourceImageUrl" validate:"required" example:"https://example.com/image.jpg"`
 	ImageSourceType ImageSourceType `json:"imageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
-	EditType        EditType        `json:"editType" validate:"required,oneof=INPAINT_REMOVE INPAINT_REPLACE INPAINT_ADD" example:"INPAINT_REMOVE"`
+	EditType        EditType        `json:"editType" validate:"required,oneof=EDIT_MODE_INPAINT_REMOVAL EDIT_MODE_INPAINT_REPLACE EDIT_MODE_INPAINT_INSERTION" example:"EDIT_MODE_INPAINT_REMOVAL"`
 	EditMode        EditMode        `json:"editMode" validate:"required,oneof=PROMPT REGION" example:"PROMPT"`
 	EditPrompt      *string         `json:"editPrompt"  example:"A beautiful landscape"`
 	EditRegion      []EditRegion    `json:"editRegion"  example:"[{\"x\": 100, \"y\": 100, \"width\": 200, \"height\": 200}]"`
+	ReplacePrompt   *ReplacePrompt  `json:"replacePrompt" example:"{\"replaceFrom\": \"\", \"replaceTo\": \"\"}"`
 }
 
 type NewTask[T any] struct {

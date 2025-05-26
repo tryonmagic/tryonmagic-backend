@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -369,6 +370,15 @@ func (t *taskService) NewEditImageTaskCloudinary(c *fiber.Ctx, newTask *validati
 	var transformation string
 	if newTask.InputData.EditType == validation.EditTypeInpaintRemove {
 		transformation = fmt.Sprintf("e_gen_remove:prompt_%s;multiple_true;remove-shadow_true", *newTask.InputData.EditPrompt)
+	} else if newTask.InputData.EditType == validation.EditTypeInpaintReplace {
+		from := strings.TrimSpace(*newTask.InputData.ReplacePrompt.ReplaceFrom)
+		to := strings.TrimSpace(newTask.InputData.ReplacePrompt.ReplaceTo)
+		if from == "" {
+			return nil, errors.New("replaceFrom is required")
+		} else if to == "" {
+			return nil, errors.New("replaceTo is required")
+		}
+		transformation = fmt.Sprintf("e_gen_replace:from_%s;to_%s;multiple_true", from, to)
 	}
 	if transformation == "" {
 		return nil, errors.New("invalid edit type")
