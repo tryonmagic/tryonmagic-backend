@@ -1,12 +1,7 @@
 on:
-  workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
-      tag:
-        required: true
-        type: string
+  push:
+    branches:
+      - main
 
 jobs:
   deploy:
