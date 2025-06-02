@@ -1,15 +1,18 @@
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
-      - name: echo token
-        run: echo ${{ secrets.GHCR_TOKEN }}
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -26,32 +29,12 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Define environment and tag
-        id: vars
-        run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]
-          then
-            echo "TAG=${{ github.ref_name }}" >> $GITHUB_ENV
-            echo "ENV=prod" >> $GITHUB_ENV
-          else
-            echo "TAG=${{ github.sha }}" >> $GITHUB_ENV
-            echo "ENV=stg" >> $GITHUB_ENV
-          fi
-
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ env.TAG }}
+          tags: ghcr.io/${{ github.repository }}:${{ inputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-
-      # - name: Update deployment repository with docker image tag
-      #   uses: printnowstack/pvr-action/update-deployment@main
-      #   with:
-      #     tag: ${{ env.TAG }}
-      #     microservice-name: ${{ github.event.repository.name }}
-      #     deployment-env: "${{ env.ENV }}"
-      #     deploy-key: ${{ secrets.DEPLOY_KEY }}
