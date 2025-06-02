@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
+      - name: echo token
+        run: echo ${{ secrets.GHCR_TOKEN }}
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
