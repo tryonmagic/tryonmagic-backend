@@ -1,4 +1,4 @@
-name: CD [package & update deployment spec]
+name: Continuous Deployment
 on:
   push:
     branches: [main]
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   deploy:
-    uses: build.yaml
+    uses: ./.github/workflows/build.yaml
     with:
       environment: ${{ github.ref_type == 'tag' && 'prod' || 'stg' }}
       tag: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
