@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   deploy:
-    uses: ./.github/workflows/docker-build-and-push.yaml
+    uses: build.yaml
     with:
       environment: ${{ github.ref_type == 'tag' && 'prod' || 'stg' }}
       tag: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
