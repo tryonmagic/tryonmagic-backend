@@ -13,6 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
+      - name: Print deployment environment
+        run: |
+          echo "Deployment environment: ${{ inputs.environment }}"
+
+      - name: Check GHCR_TOKEN availability
+        run: |
+          if [ -z "${{ secrets.GHCR_TOKEN }}" ]; then
+            echo "GHCR_TOKEN is NOT set"
+            exit 1
+          else
+            echo "GHCR_TOKEN is set"
+          fi
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
