@@ -1,0 +1,20 @@
+name: CD [package & update deployment spec]
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  deploy-stg:
+    if: github.ref_type != 'tag'
+    uses: ./.github/workflows/deploy.yaml
+    with:
+      environment: stg
+      tag: ${{ github.sha }}
+
+  deploy-prod:
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/deploy.yaml
+    with:
+      environment: prod
+      tag: ${{ github.ref_name }}
