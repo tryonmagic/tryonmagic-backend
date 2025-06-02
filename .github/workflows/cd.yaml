@@ -5,14 +5,14 @@ on:
     tags: ['v*']
 
 jobs:
-  deploy-stg:
+  stg:
     if: github.ref_type != 'tag'
     uses: ./.github/workflows/deploy.yaml
     with:
       environment: stg
       tag: ${{ github.sha }}
 
-  deploy-prod:
+  prod:
     if: github.ref_type == 'tag'
     uses: ./.github/workflows/deploy.yaml
     with:

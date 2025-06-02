@@ -9,7 +9,7 @@ on:
         type: string
 
 jobs:
-  cd:
+  deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
