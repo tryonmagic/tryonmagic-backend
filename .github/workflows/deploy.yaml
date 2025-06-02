@@ -27,9 +27,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ GHCR_TOKEN }}
-        env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Define environment and tag
         id: vars
