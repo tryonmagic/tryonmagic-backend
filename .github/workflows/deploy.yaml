@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Print deployment environment
         run: |
-          echo "Deployment environment: ${{ inputs.environment }}"
+          echo "Deployment environment: ${{ github.environment }}"
 
       - name: Check GHCR_TOKEN availability
         run: |
