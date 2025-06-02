@@ -9,7 +9,7 @@ permissions:
   packages: write
 
 jobs:
-  deploy:
+  cd:
     uses: ./.github/workflows/build.yaml
     with:
       environment: ${{ github.ref_type == 'tag' && 'prod' || 'stg' }}
