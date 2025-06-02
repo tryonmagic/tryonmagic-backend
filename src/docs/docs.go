@@ -1553,7 +1553,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8000",
 	BasePath:         "/v1",
 	Schemes:          []string{},
-	Title:            "ProdigyAI API documentation",
+	Title:            "tryonmagic API documentation",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

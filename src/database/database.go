@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

@@ -3,11 +3,11 @@ package middleware
 import (
 	"strings"
 
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/model"
-	"github.com/mbbipul/prodigyai-backend/src/service"
-	"github.com/mbbipul/prodigyai-backend/src/utils"
-	"github.com/mbbipul/prodigyai-backend/src/validation"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/validation"
 
 	"github.com/gofiber/fiber/v2"
 )

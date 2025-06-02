@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/mbbipul/prodigyai-backend/src/response"
-	"github.com/mbbipul/prodigyai-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/response"
+	"github.com/mbbipul/tryonmagic-backend/src/service"
 
 	"github.com/gofiber/fiber/v2"
 )

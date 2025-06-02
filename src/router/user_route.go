@@ -1,9 +1,9 @@
 package router
 
 import (
-	"github.com/mbbipul/prodigyai-backend/src/controller"
-	m "github.com/mbbipul/prodigyai-backend/src/middleware"
-	"github.com/mbbipul/prodigyai-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/controller"
+	m "github.com/mbbipul/tryonmagic-backend/src/middleware"
+	"github.com/mbbipul/tryonmagic-backend/src/service"
 
 	"github.com/gofiber/fiber/v2"
 )

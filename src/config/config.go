@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 	"github.com/spf13/viper"
 )
 

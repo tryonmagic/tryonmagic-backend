@@ -8,11 +8,11 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/model"
-	"github.com/mbbipul/prodigyai-backend/src/response"
-	"github.com/mbbipul/prodigyai-backend/src/service"
-	"github.com/mbbipul/prodigyai-backend/src/validation"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/src/response"
+	"github.com/mbbipul/tryonmagic-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/validation"
 )
 
 type AuthController struct {
@@ -357,7 +357,7 @@ func (a *AuthController) GoogleCallback(c *fiber.Ctx) error {
 		})
 
 	// TODO: replace this url with the link to the oauth google success page of your front-end app
-	// googleLoginURL := fmt.Sprintf("http://link-to-github.com/mbbipul/prodigyai-backend/google/success?access_token=%s&refreshToken=%s",
+	// googleLoginURL := fmt.Sprintf("http://link-to-github.com/mbbipul/tryonmagic-backend/google/success?access_token=%s&refreshToken=%s",
 	// 	tokens.Access.Token, tokens.Refresh.Token)
 
 	// return c.Status(fiber.StatusSeeOther).Redirect(googleLoginURL)

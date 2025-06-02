@@ -4,7 +4,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

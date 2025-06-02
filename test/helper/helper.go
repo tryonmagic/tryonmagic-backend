@@ -4,9 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/model"
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"

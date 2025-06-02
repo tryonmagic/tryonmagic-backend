@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mbbipul/prodigyai-backend/src/response"
-	"github.com/mbbipul/prodigyai-backend/test"
+	"github.com/mbbipul/tryonmagic-backend/src/response"
+	"github.com/mbbipul/tryonmagic-backend/test"
 
 	"github.com/stretchr/testify/assert"
 )

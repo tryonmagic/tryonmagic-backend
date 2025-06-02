@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 )
 
 func FiberConfig() fiber.Config {

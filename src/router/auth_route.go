@@ -1,12 +1,12 @@
 package router
 
 import (
-	m "github.com/mbbipul/prodigyai-backend/src/middleware"
+	m "github.com/mbbipul/tryonmagic-backend/src/middleware"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/controller"
-	"github.com/mbbipul/prodigyai-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/controller"
+	"github.com/mbbipul/tryonmagic-backend/src/service"
 )
 
 func AuthRoutes(

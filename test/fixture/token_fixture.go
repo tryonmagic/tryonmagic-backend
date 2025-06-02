@@ -3,9 +3,9 @@ package fixture
 import (
 	"time"
 
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/model"
-	"github.com/mbbipul/prodigyai-backend/test/helper"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/test/helper"
 )
 
 var ExpiresAccessToken = time.Now().UTC().Add(time.Minute * time.Duration(config.JWTAccessExp))

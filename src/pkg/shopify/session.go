@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mbbipul/prodigyai-backend/src/pkg/shopify/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/pkg/shopify/utils"
 )
 
 type AssociatedUser struct {

@@ -1,6 +1,6 @@
 package validation
 
-import "github.com/mbbipul/prodigyai-backend/src/model"
+import "github.com/mbbipul/tryonmagic-backend/src/model"
 
 type CreateUser struct {
 	FirstName string     `json:"firstName" validate:"required,max=50" example:"fake name"`

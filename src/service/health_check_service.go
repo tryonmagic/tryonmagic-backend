@@ -4,7 +4,7 @@ import (
 	"errors"
 	"runtime"
 
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

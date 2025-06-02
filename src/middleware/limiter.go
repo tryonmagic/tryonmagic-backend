@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"github.com/mbbipul/prodigyai-backend/src/response"
+	"github.com/mbbipul/tryonmagic-backend/src/response"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"

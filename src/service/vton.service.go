@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	"github.com/mbbipul/prodigyai-backend/src/model"
-	"github.com/mbbipul/prodigyai-backend/src/pkg/downloader"
-	"github.com/mbbipul/prodigyai-backend/src/validation"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/src/pkg/downloader"
+	"github.com/mbbipul/tryonmagic-backend/src/validation"
 	"github.com/sirupsen/logrus"
 )
 

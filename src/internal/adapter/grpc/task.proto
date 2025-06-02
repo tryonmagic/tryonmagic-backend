@@ -2,7 +2,7 @@ syntax = "proto3";
 import "google/protobuf/struct.proto";
 
 package task;
-option go_package = "github.com/mbbipul/prodigyai-backend/internal/adapter/grpc";
+option go_package = "github.com/mbbipul/tryonmagic-backend/internal/adapter/grpc";
 
 service TaskService {
   rpc UpdateTaskStatus (UpdateTaskStatusRequest) returns (UpdateTaskStatusRequest);

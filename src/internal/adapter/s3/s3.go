@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	cfg "github.com/mbbipul/prodigyai-backend/src/config"
+	cfg "github.com/mbbipul/tryonmagic-backend/src/config"
 )
 
 var s3Lock = &sync.Mutex{}

@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
-	s3ada "github.com/mbbipul/prodigyai-backend/src/internal/adapter/s3"
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	s3ada "github.com/mbbipul/tryonmagic-backend/src/internal/adapter/s3"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 )
 
 type S3Downloader struct {

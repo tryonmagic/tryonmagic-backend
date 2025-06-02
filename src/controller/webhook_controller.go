@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/mbbipul/prodigyai-backend/src/pkg/cloudinaryapi"
-	"github.com/mbbipul/prodigyai-backend/src/response"
-	"github.com/mbbipul/prodigyai-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/pkg/cloudinaryapi"
+	"github.com/mbbipul/tryonmagic-backend/src/response"
+	"github.com/mbbipul/tryonmagic-backend/src/service"
 
 	"github.com/gofiber/fiber/v2"
 )

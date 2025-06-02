@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mbbipul/prodigyai-backend/src/model"
-	"github.com/mbbipul/prodigyai-backend/src/response"
-	"github.com/mbbipul/prodigyai-backend/src/validation"
-	"github.com/mbbipul/prodigyai-backend/test"
-	"github.com/mbbipul/prodigyai-backend/test/fixture"
-	"github.com/mbbipul/prodigyai-backend/test/helper"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/src/response"
+	"github.com/mbbipul/tryonmagic-backend/src/validation"
+	"github.com/mbbipul/tryonmagic-backend/test"
+	"github.com/mbbipul/tryonmagic-backend/test/fixture"
+	"github.com/mbbipul/tryonmagic-backend/test/helper"
 
 	"github.com/stretchr/testify/assert"
 )

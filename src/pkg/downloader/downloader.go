@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mbbipul/prodigyai-backend/src/internal/adapter/s3"
-	"github.com/mbbipul/prodigyai-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/internal/adapter/s3"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 )
 
 type FILE_SOURCE_PREFIX string

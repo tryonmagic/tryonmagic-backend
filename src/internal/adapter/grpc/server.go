@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mbbipul/prodigyai-backend/src/config"
-	socket "github.com/mbbipul/prodigyai-backend/src/internal/adapter/socketio"
-	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
+	socket "github.com/mbbipul/tryonmagic-backend/src/internal/adapter/socketio"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 

@@ -1,4 +1,4 @@
-module github.com/mbbipul/prodigyai-backend
+module github.com/mbbipul/tryonmagic-backend
 
 go 1.23.0
 

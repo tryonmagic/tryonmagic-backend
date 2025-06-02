@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
 
 	"github.com/rabbitmq/amqp091-go"
 )

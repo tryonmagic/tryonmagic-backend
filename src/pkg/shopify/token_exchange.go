@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/mbbipul/prodigyai-backend/src/config"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
 )
 
 type TokenExchangeRequest struct {

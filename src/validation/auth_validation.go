@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"github.com/mbbipul/prodigyai-backend/src/model"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
 )
 
 type Register struct {
