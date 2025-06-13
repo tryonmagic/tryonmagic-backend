@@ -28,7 +28,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          audience: sts.amazonaws.com.cn
+          audience: sts.amazonaws.com
           aws-region: us-west-2
           role-to-assume: arn:aws:iam::551588892498:role/tryonmagic-ecr-github-action
 
