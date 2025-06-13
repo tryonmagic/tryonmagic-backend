@@ -29,7 +29,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           audience: sts.amazonaws.com.cn
-          aws-region: us-east-3
+          aws-region: us-west-2
           role-to-assume: arn:aws:iam::551588892498:role/tryonmagic-ecr-github-action
 
       - name: Login to Amazon ECR
