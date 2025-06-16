@@ -108,6 +108,10 @@ func init() {
 }
 
 func loadConfig() {
+	// First priority: Read from process environment variables
+	viper.AutomaticEnv()
+
+	// Second priority: Try to read from .env file as fallback
 	configPaths := []string{
 		"./",     // For app
 		"../../", // For test folder
@@ -117,10 +121,10 @@ func loadConfig() {
 		viper.SetConfigFile(path + ".env")
 
 		if err := viper.ReadInConfig(); err == nil {
-			utils.Log.Infof("Config file loaded from %s", path)
-			return
+			utils.Log.Infof("Config file loaded from %s (as fallback)", path)
+			break
 		}
 	}
 
-	utils.Log.Error("Failed to load any config file")
+	utils.Log.Info("Environment variables prioritized from process environment")
 }
