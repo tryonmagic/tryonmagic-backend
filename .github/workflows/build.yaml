@@ -45,3 +45,29 @@ jobs:
             551588892498.dkr.ecr.us-west-2.amazonaws.com/prod-tryonmagic-backend:deployment-${{github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  update-deployment-tag:
+    runs-on: ubuntu-latest
+    name: Update Deployment Tag
+    needs:
+      - build
+
+    steps:
+      - name: Trigger Deployment Update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.API_TOKEN_GITHUB }}
+          repository: CHEQPlease/cheq-deployments
+          event-type: update-deployment-version
+          client-payload: |
+            {
+              "deployment": {
+                "microservice": {
+                  "version": "${{ github.sha }}"
+                }
+              },
+              "environment": "${{ inputs.environment }}",
+              "service": "cheq-queue-manager",
+              "commit_message": "${{ steps.commit.outputs.MESSAGE }}",
+              "file_path": "tryonmagic-backend/${{ inputs.environment }}/values_tag.yaml"
+            }
