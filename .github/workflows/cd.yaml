@@ -14,27 +14,3 @@ jobs:
     with:
       environment: ${{ github.ref_type == 'tag' && 'prod' || 'stg' }}
       tag: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
-
-  update-deployment-tag:
-    runs-on: ubuntu-latest
-    name: Update Deployment Tag
-    needs:
-      - cd
-
-    steps:
-      - name: Trigger Deployment Update
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.API_TOKEN_GITHUB }}
-          repository: tryonmagic/tryonmagic-deployments
-          event-type: update-deployment-version
-          client-payload: |
-            {
-              "deployment": {
-                "microservice": {
-                  "version": "${{ github.sha }}"
-                }
-              },
-              "environment": "${{ github.ref_type == 'tag' && 'prod' || 'stg' }}",
-              "service": "tryonmagic-backend",
-            }
