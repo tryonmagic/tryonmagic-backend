@@ -95,7 +95,7 @@ type EditImageTaskInput struct {
 }
 
 type NewTask[T any] struct {
-	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE ENHANCE EXPAND_IMAGE EDIT_IMAGE" example:"REMOVE_BACKGROUND"`
+	Type      model.TaskType `json:"type" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE ENHANCE EXPAND_IMAGE EDIT_IMAGE PRODUCT_IMAGE_EDITING" example:"REMOVE_BACKGROUND"`
 	InputData T              `json:"inputData" validate:"required" example:"{\"key\": \"value\"}"`
 }
 
@@ -107,4 +107,90 @@ type ExpandImageTaskInput struct {
 	VerticalAlignment   string          `json:"verticalAlignment" validate:"required,oneof=top center bottom" example:"center"`
 	ExpandPrompt        string          `json:"expandPrompt" validate:"required" example:"A beautiful landscape"`
 	ImageSourceType     ImageSourceType `json:"imageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
+}
+
+// Product Image Editing Types
+type ProductImageEditingType string
+
+const (
+	SmartBackground      ProductImageEditingType = "SMART_BACKGROUND"
+	StyleTransfer        ProductImageEditingType = "STYLE_TRANSFER"
+	SceneGeneration      ProductImageEditingType = "SCENE_GENERATION"
+	ProductVariants      ProductImageEditingType = "PRODUCT_VARIANTS"
+	ProductColorVariants ProductImageEditingType = "PRODUCT_COLOR_VARIANTS"
+)
+
+type StyleType string
+
+const (
+	Artistic StyleType = "ARTISTIC"
+	Mood     StyleType = "MOOD"
+	Brand    StyleType = "BRAND"
+	Creative StyleType = "CREATIVE"
+)
+
+type SceneType string
+
+const (
+	Lifestyle        SceneType = "LIFESTYLE"
+	Commercial       SceneType = "COMMERCIAL"
+	Context          SceneType = "CONTEXT"
+	BrandEnvironment SceneType = "BRAND_ENVIRONMENT"
+)
+
+type VariantType string
+
+const (
+	Size          VariantType = "SIZE"
+	Configuration VariantType = "CONFIGURATION"
+	Angle         VariantType = "ANGLE"
+	Batch         VariantType = "BATCH"
+)
+
+type ProductImageEditTaskInput struct {
+	// Common fields
+	SourceImageUrl  string                  `json:"sourceImageUrl" validate:"required" example:"https://example.com/image.jpg"`
+	ImageSourceType ImageSourceType         `json:"imageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
+	ProcessingType  ProductImageEditingType `json:"processingType" validate:"required,oneof=SMART_BACKGROUND STYLE_TRANSFER SCENE_GENERATION PRODUCT_VARIANTS PRODUCT_COLOR_VARIANTS" example:"SMART_BACKGROUND"`
+
+	// Smart Background fields
+	BackgroundPrompt   *string `json:"backgroundPrompt" example:"A modern office background"`
+	PreserveLighting   *bool   `json:"preserveLighting" example:"true"`
+	MatchShadows       *bool   `json:"matchShadows" example:"true"`
+	EnhanceQuality     *bool   `json:"enhanceQuality" example:"true"`
+	BackgroundStyle    *string `json:"backgroundStyle" example:"professional"`
+	LightingAdjustment *string `json:"lightingAdjustment" example:"soft"`
+
+	// Style Transfer fields
+	StyleType               *StyleType       `json:"styleType" validate:"omitempty,oneof=ARTISTIC MOOD BRAND CREATIVE" example:"ARTISTIC"`
+	StylePrompt             *string          `json:"stylePrompt" example:"vintage style"`
+	StyleReferenceImageUrl  *string          `json:"styleReferenceImageUrl" example:"https://example.com/style.jpg"`
+	StyleReferenceImageType *ImageSourceType `json:"styleReferenceImageType" validate:"omitempty,oneof=URL BASE64" example:"URL"`
+	Intensity               *float64         `json:"intensity" validate:"omitempty,min=0,max=1" example:"0.7"`
+	PreserveDetails         *bool            `json:"preserveDetails" example:"true"`
+	BrandGuidelines         *string          `json:"brandGuidelines" example:"Brand specific guidelines"`
+
+	// Scene Generation fields
+	SceneType          *SceneType `json:"sceneType" validate:"omitempty,oneof=LIFESTYLE COMMERCIAL CONTEXT BRAND_ENVIRONMENT" example:"LIFESTYLE"`
+	ScenePrompt        *string    `json:"scenePrompt" example:"Product in a cozy living room"`
+	ContextDescription *string    `json:"contextDescription" example:"Modern home setting"`
+	LifestyleSettings  *string    `json:"lifestyleSettings" example:"casual home environment"`
+	BrandEnvironment   *string    `json:"brandEnvironment" example:"luxury brand setting"`
+	LightingConditions *string    `json:"lightingConditions" example:"natural daylight"`
+	TargetAudience     *string    `json:"targetAudience" example:"young professionals"`
+
+	// Product Color Variants fields
+	Prompt         *string `json:"prompt" example:"transform the product[1] color in black with white strip"`
+	ItemsToRecolor *string `json:"itemsToRecolor" example:"shoe"`
+	Color          *string `json:"color" example:"black"`
+
+	// Product Variants fields
+	VariantType          *VariantType `json:"variantType" validate:"omitempty,oneof=SIZE CONFIGURATION ANGLE BATCH" example:"SIZE"`
+	VariantPrompt        *string      `json:"variantPrompt" example:"Different size variations"`
+	NumberOfVariants     *int         `json:"numberOfVariants" validate:"omitempty,min=1,max=10" example:"3"`
+	SizeVariations       []string     `json:"sizeVariations" example:"[\"small\", \"medium\", \"large\"]"`
+	ConfigurationOptions []string     `json:"configurationOptions" example:"[\"open\", \"closed\", \"partial\"]"`
+	AngleVariations      []string     `json:"angleVariations" example:"[\"front\", \"side\", \"back\"]"`
+	ColorVariations      []string     `json:"colorVariations" example:"[\"red\", \"blue\", \"green\"]"`
+	MaterialVariations   []string     `json:"materialVariations" example:"[\"metal\", \"wood\", \"plastic\"]"`
 }

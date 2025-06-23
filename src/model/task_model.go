@@ -25,12 +25,13 @@ const (
 	TaskTypeGenerateImage     TaskType = "GENERATE_IMAGE"
 	TaskTypeReplaceBackground TaskType = "REPLACE_BACKGROUND"
 
-	TaskTypeGenerateAIModel TaskType = "GENERATE_AI_MODEL"
-	TaskTypeVTon            TaskType = "VTON"
-	TaskTypeUpscale         TaskType = "UPSCALE"
-	TaskTypeEnhance         TaskType = "ENHANCE"
-	TaskTypeExpandImage     TaskType = "EXPAND_IMAGE"
-	TaskTypeEditImage       TaskType = "EDIT_IMAGE"
+	TaskTypeGenerateAIModel  TaskType = "GENERATE_AI_MODEL"
+	TaskTypeVTon             TaskType = "VTON"
+	TaskTypeUpscale          TaskType = "UPSCALE"
+	TaskTypeEnhance          TaskType = "ENHANCE"
+	TaskTypeExpandImage      TaskType = "EXPAND_IMAGE"
+	TaskTypeEditImage        TaskType = "EDIT_IMAGE"
+	TaskTypeProductImageEdit TaskType = "PRODUCT_IMAGE_EDITING"
 )
 
 type Task struct {

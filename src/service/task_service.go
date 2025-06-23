@@ -169,6 +169,21 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
+	} else if newTask.Type == model.TaskTypeProductImageEdit {
+		var inputData validation.ProductImageEditTaskInput
+		inputBytes, err := json.Marshal(newTask.InputData)
+		if err != nil {
+			t.Log.Errorf("Failed to marshal input data: %+v", err)
+			return nil, errors.New("invalid input data format")
+		}
+		if err := json.Unmarshal(inputBytes, &inputData); err != nil {
+			t.Log.Errorf("Failed to unmarshal input data into ProductImageEditTaskInput: %+v", err)
+			return nil, errors.New("invalid input data structure")
+		}
+		return t.NewProductImageEditTask(c, &validation.NewTask[validation.ProductImageEditTaskInput]{
+			Type:      newTask.Type,
+			InputData: inputData,
+		})
 	}
 
 	return nil, errors.New("unsupported task type")
@@ -350,6 +365,45 @@ func (t *taskService) NewEditImageTask(c *fiber.Ctx, newTask *validation.NewTask
 		return t.NewEditImageTaskCloudinary(c, newTask)
 	}
 	return t.createTask(c, newTask.InputData, model.TaskTypeEditImage, rabbitmq.EditImageTaskPublisher)
+}
+
+func (t *taskService) NewProductImageEditTask(c *fiber.Ctx, newTask *validation.NewTask[validation.ProductImageEditTaskInput]) (*model.Task, error) {
+	if newTask.InputData.ItemsToRecolor == nil || *newTask.InputData.ItemsToRecolor == "" {
+		return t.createTask(c, newTask.InputData, model.TaskTypeProductImageEdit, rabbitmq.ProductImageEditTaskPublisher)
+	}
+	if newTask.InputData.Color == nil || *newTask.InputData.Color == "" {
+		return nil, errors.New("color is required")
+	}
+	return t.NewProductRecolorTask(c, newTask)
+}
+
+func (t *taskService) NewProductRecolorTask(c *fiber.Ctx, newTask *validation.NewTask[validation.ProductImageEditTaskInput]) (*model.Task, error) {
+	task, err := t.createTask(c, newTask.InputData, newTask.Type, nil)
+	if err != nil {
+		t.Log.Errorf("Failed to create task: %+v", err)
+		return nil, err
+	}
+
+	ctx := c.Context()
+	sourceImageUrl, err := downloader.GetImageFromSource(ctx, newTask.InputData.SourceImageUrl)
+	if err != nil {
+		t.Log.Errorf("Failed to get image URL for source image: %v", err)
+		return nil, err
+	}
+
+	webhookUrl := config.WebhookBaseURL + "/cloudinary/" + config.WebhookAPIKey + "/" + task.ID.String()
+	fmt.Println("Webhook URL:", webhookUrl)
+	itemsToRecolor := strings.TrimSpace(*newTask.InputData.ItemsToRecolor)
+	itemsToRecolor = strings.Join(strings.Split(itemsToRecolor, ","), ";")
+
+	transformation := fmt.Sprintf("e_gen_recolor:prompt_%s;to-color_%s;multiple_true", itemsToRecolor, *newTask.InputData.Color)
+	location, err := cloudinaryapi.UploadImageToCloudinary(sourceImageUrl, task.ID.String(), transformation, webhookUrl, ctx)
+	if err != nil {
+		t.Log.Errorf("Failed to upload image to Cloudinary: %+v", err)
+		return nil, err
+	}
+	fmt.Println("Cloudinary location:", *location)
+	return task, nil
 }
 
 func (t *taskService) NewEditImageTaskCloudinary(c *fiber.Ctx, newTask *validation.NewTask[validation.EditImageTaskInput]) (*model.Task, error) {

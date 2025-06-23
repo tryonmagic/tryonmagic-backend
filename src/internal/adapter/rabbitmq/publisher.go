@@ -230,3 +230,19 @@ func EditImageTaskPublisher() (BasePublisher, error) {
 	}
 	return &publisher, nil
 }
+
+func ProductImageEditTaskPublisher() (BasePublisher, error) {
+	conn, err := GetConnection()
+	if err != nil {
+		log.Printf("Failed to connect to Message broker: %v", err)
+		return nil, err
+	}
+	publisher := basePublisher{
+		Publisher:    NewPublisher(conn),
+		exchangeName: config.AITaskExchangeName,
+		exchangeType: "direct",
+		queueName:    config.ProductImageEditTaskQueueName,
+		routingKey:   config.ProductImageEditTaskRoutingKey,
+	}
+	return &publisher, nil
+}
