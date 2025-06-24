@@ -1,0 +1,52 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Debug Environment
+        run: |
+          echo "Input environment: '${{ inputs.environment }}'"
+          echo "Current environment: '${{ github.environment }}'"
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: us-west-2
+          role-to-assume: arn:aws:iam::551588892498:role/tryonmagic-ecr-github-action
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Deployment Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags:
+            551588892498.dkr.ecr.us-west-2.amazonaws.com/prod-tryonmagic-backend:deployment-${{github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

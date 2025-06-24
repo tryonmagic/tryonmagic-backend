@@ -9,8 +9,15 @@ permissions:
   contents: read
 
 jobs:
-  cd:
-    uses: ./.github/workflows/build.yaml
+  package:
+    uses: ./.github/workflows/package.yaml
     with:
       environment: ${{ github.ref_type == 'tag' && 'prod' || 'stg' }}
       tag: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+    secrets: inherit
+  dispatch:
+    uses: ./.github/workflows/dispatch.yaml
+    with:
+      environment: ${{ github.ref_type == 'tag' && 'prod' || 'stg' }}
+      tag: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+    secrets: inherit
