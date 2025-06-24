@@ -53,26 +53,15 @@ jobs:
 
   update-deployment-tag:
     runs-on: ubuntu-latest
-#    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment }}  # This should work now
     name: Update Deployment Tag
     needs:
       - build
-
     steps:
       - name: Debug Environment
         run: |
           echo "Input environment: '${{ inputs.environment }}'"
           echo "Current environment: '${{ github.environment }}'"
-
-      - name: Debug Secret
-        run: |
-          if [ -z "${{ secrets.API_TOKEN_GITHUB }}" ]; then
-            echo "Secret is empty or null"
-          else
-            echo "Secret exists (length: ${#API_TOKEN_GITHUB})"
-          fi
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
 
       - name: Trigger Deployment Update
         uses: peter-evans/repository-dispatch@v3
@@ -89,7 +78,6 @@ jobs:
               },
               "environment": "${{ inputs.environment }}",
               "service": "tryonmagic-backend",
-              "commit_message": "TODO",
+              "commit_message": "TODO", 
               "file_path": "tryonmagic-backend/${{ inputs.environment }}/values_tag.yaml"
-            }      
-
+            }
