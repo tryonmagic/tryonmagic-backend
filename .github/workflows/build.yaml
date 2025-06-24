@@ -16,6 +16,11 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Debug Environment
+        run: |
+          echo "Input environment: '${{ inputs.environment }}'"
+          echo "Current environment: '${{ github.environment }}'"
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -48,7 +53,7 @@ jobs:
 
   update-deployment-tag:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+#    environment: ${{ inputs.environment }}
     name: Update Deployment Tag
     needs:
       - build
