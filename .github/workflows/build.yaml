@@ -54,6 +54,11 @@ jobs:
       - build
 
     steps:
+      - name: Debug Environment
+        run: |
+          echo "Input environment: '${{ inputs.environment }}'"
+          echo "Current environment: '${{ github.environment }}'"
+
       - name: Debug Secret
         run: |
           if [ -z "${{ secrets.API_TOKEN_GITHUB }}" ]; then
