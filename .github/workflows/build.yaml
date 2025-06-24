@@ -63,6 +63,15 @@ jobs:
           echo "Input environment: '${{ inputs.environment }}'"
           echo "Current environment: '${{ github.environment }}'"
 
+      - name: Debug Environment and Secrets
+        run: |
+          echo "Input environment: '${{ inputs.environment }}'"
+          echo "Current environment: '${{ github.environment }}'"
+          echo "Secret exists: ${{ secrets.API_TOKEN_GITHUB != '' }}"
+          echo "Secret length: ${#API_TOKEN_SECRET}"
+        env:
+          API_TOKEN_SECRET: ${{ secrets.API_TOKEN_GITHUB }}
+
       - name: Trigger Deployment Update
         uses: peter-evans/repository-dispatch@v3
         with:
