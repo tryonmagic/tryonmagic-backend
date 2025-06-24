@@ -16,6 +16,7 @@ jobs:
       tag: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
     secrets: inherit
   dispatch:
+    needs: package
     uses: ./.github/workflows/dispatch.yaml
     with:
       environment: ${{ github.ref_type == 'tag' && 'prod' || 'stg' }}
