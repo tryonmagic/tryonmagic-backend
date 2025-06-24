@@ -105,7 +105,7 @@ type ExpandImageTaskInput struct {
 	TargetHeight        int             `json:"targetHeight" validate:"required,min=1" example:"600"`
 	HorizontalAlignment string          `json:"horizontalAlignment" validate:"required,oneof=left center right" example:"center"`
 	VerticalAlignment   string          `json:"verticalAlignment" validate:"required,oneof=top center bottom" example:"center"`
-	ExpandPrompt        string          `json:"expandPrompt" validate:"required" example:"A beautiful landscape"`
+	ExpandPrompt        string          `json:"expandPrompt" example:"A beautiful landscape"`
 	ImageSourceType     ImageSourceType `json:"imageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
 }
 
