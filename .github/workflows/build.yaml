@@ -48,6 +48,7 @@ jobs:
 
   update-deployment-tag:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     name: Update Deployment Tag
     needs:
       - build
