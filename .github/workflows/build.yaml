@@ -54,6 +54,16 @@ jobs:
       - build
 
     steps:
+      - name: Debug Secret
+        run: |
+          if [ -z "${{ secrets.API_TOKEN_GITHUB }}" ]; then
+            echo "Secret is empty or null"
+          else
+            echo "Secret exists (length: ${#API_TOKEN_GITHUB})"
+          fi
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+
       - name: Trigger Deployment Update
         uses: peter-evans/repository-dispatch@v3
         with:
