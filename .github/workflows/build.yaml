@@ -46,3 +46,29 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  update-deployment-tag:
+    runs-on: ubuntu-latest
+    name: Update Deployment Tag
+    needs:
+      - build
+
+    steps:
+      - name: Trigger Deployment Update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.API_TOKEN_GITHUB }}
+          repository: tryonmagic/tryonmagic-deployments
+          event-type: update-deployment-version
+          client-payload: |
+            {
+              "deployment": {
+                "microservice": {
+                  "version": "${{ github.sha }}"
+                }
+              },
+              "environment": "${{ inputs.environment }}",
+              "service": "tryonmagic-backend",
+              "commit_message": "TODO",
+              "file_path": "tryonmagic-backend/${{ inputs.environment }}/values_tag.yaml"
+            }      
+
