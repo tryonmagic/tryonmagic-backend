@@ -28,10 +28,8 @@ jobs:
                   "version": "${{ github.sha }}"
                 }
               },
-              "environment": "prod",
-              "service": "tryonmagic-backend",
               "commit_message": "TODO", 
-              "file_path": "tryonmagic-backend/${{ inputs.environment }}/values_tag.yaml"
+              "file_path": "tryonmagic-backend/prod/values_tag.yaml"
             }
 
-# TODO: update line 31 with "environment": "${{ inputs.environment }}",
+# TODO: update line 32 with "file_path": "tryonmagic-backend/${{ inputs.environment }}/values_tag.yaml"
