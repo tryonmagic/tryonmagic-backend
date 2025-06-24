@@ -13,5 +13,5 @@ RUN apk add --no-cache curl
 WORKDIR /app
 COPY --from=build /app/main .
 
-EXPOSE 8000
+EXPOSE 8000 8001
 CMD ["./main"]
