@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -193,11 +192,30 @@ func (s *authService) VerifyEmail(c *fiber.Ctx, query *validation.Token) error {
 }
 
 func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, isOnline bool, store bool) (*model.User, error) {
+	s.Log.Infof("ShopifyAuth payload: %v", payload)
 	val, err := utils.DecodeJWTToken(payload.SessionToken, config.ShopifyAPISecret)
 	if err != nil {
-		fmt.Printf("Error decoding token: %v", err)
+		s.Log.Errorf("Error decoding token: %v", err)
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid session token")
 	}
-	dest := val["dest"].(string)
+
+	if val == nil {
+		s.Log.Errorf("Decoded token claims are nil")
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid session token claims")
+	}
+
+	destInterface, exists := val["dest"]
+	if !exists {
+		s.Log.Errorf("Missing 'dest' claim in session token")
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid session token: missing destination")
+	}
+
+	dest, ok := destInterface.(string)
+	if !ok {
+		s.Log.Errorf("Invalid 'dest' claim type in session token: %T", destInterface)
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid session token: invalid destination format")
+	}
+
 	shop := strings.Replace(dest, "https://", "", 1)
 	c.Locals("shop", shop)
 

@@ -35,21 +35,32 @@ func VerifyToken(tokenStr, secret, tokenType string) (string, error) {
 
 func DecodeJWTToken(tokenStr string, secret string) (jwt.MapClaims, error) {
 	if secret == "" {
+		Log.Warnf("JWT secret is empty, parsing token without verification")
 		return parseJWTToken(tokenStr)
 	}
+
+	Log.Debugf("Attempting to decode JWT token with secret verification")
 	token, err := jwt.Parse(tokenStr, func(_ *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
 
-	if err != nil || !token.Valid {
+	if err != nil {
+		Log.Errorf("JWT token parsing failed: %v", err)
 		return nil, err
+	}
+
+	if !token.Valid {
+		Log.Errorf("JWT token is invalid")
+		return nil, errors.New("token is invalid")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
+		Log.Errorf("Failed to extract claims from JWT token")
 		return nil, errors.New("invalid token claims")
 	}
 
+	Log.Debugf("Successfully decoded JWT token with %d claims", len(claims))
 	return claims, nil
 }
 

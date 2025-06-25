@@ -29,4 +29,5 @@ func AuthRoutes(
 	auth.Get("/google", authController.GoogleLogin)
 	auth.Get("/google-callback", authController.GoogleCallback)
 	auth.Post("/shopify-auth", authController.ShopifyAuth)
+	auth.Get("/shopify-diagnose", authController.ShopifyDiagnose)
 }

@@ -390,3 +390,31 @@ func (a *AuthController) ShopifyAuth(c *fiber.Ctx) error {
 			Message: "Authenticate successfully",
 		})
 }
+
+// @Tags         Auth
+// @Summary      Diagnose Shopify configuration
+// @Description  Check if Shopify API credentials are properly configured
+// @Produce      json
+// @Router       /auth/shopify-diagnose [get]
+// @Success      200  {object}  example.GenericResponse
+func (a *AuthController) ShopifyDiagnose(c *fiber.Ctx) error {
+	diagnostics := map[string]interface{}{
+		"shopify_api_key_configured":    config.ShopifyAPIKey != "",
+		"shopify_api_secret_configured": config.ShopifyAPISecret != "",
+		"shopify_api_key_length":        len(config.ShopifyAPIKey),
+		"shopify_api_secret_length":     len(config.ShopifyAPISecret),
+		"environment": func() string {
+			if config.IsProd {
+				return "production"
+			} else {
+				return "development"
+			}
+		}(),
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.GenericSuccessResponse{
+		Code:    fiber.StatusOK,
+		Message: "Shopify configuration diagnostics",
+		Data:    diagnostics,
+	})
+}
