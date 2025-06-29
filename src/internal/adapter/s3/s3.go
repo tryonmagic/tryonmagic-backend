@@ -40,7 +40,9 @@ func GetS3Client() *s3.Client {
 				fmt.Println(err)
 				panic(err)
 			}
-			s3ClientInstance = s3.NewFromConfig(sdkConfig)
+			s3ClientInstance = s3.NewFromConfig(sdkConfig, func(o *s3.Options) {
+				o.UsePathStyle = true
+			})
 		}
 	}
 
