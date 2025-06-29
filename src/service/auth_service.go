@@ -193,6 +193,7 @@ func (s *authService) VerifyEmail(c *fiber.Ctx, query *validation.Token) error {
 
 func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth, isOnline bool, store bool) (*model.User, error) {
 	s.Log.Infof("ShopifyAuth payload: %v", payload)
+	s.Log.Infof("shopify secret: %v", config.ShopifyAPISecret)
 	val, err := utils.DecodeJWTToken(payload.SessionToken, config.ShopifyAPISecret)
 	if err != nil {
 		s.Log.Errorf("Error decoding token: %v", err)
