@@ -31,16 +31,18 @@ type TaskService interface {
 }
 
 type taskService struct {
-	Log      *logrus.Logger
-	DB       *gorm.DB
-	Validate *validator.Validate
+	Log                 *logrus.Logger
+	DB                  *gorm.DB
+	Validate            *validator.Validate
+	SubscriptionService SubscriptionService
 }
 
-func NewTaskService(db *gorm.DB, validate *validator.Validate) TaskService {
+func NewTaskService(db *gorm.DB, subscriptionService SubscriptionService, validate *validator.Validate) TaskService {
 	return &taskService{
-		Log:      utils.Log,
-		DB:       db,
-		Validate: validate,
+		Log:                 utils.Log,
+		DB:                  db,
+		Validate:            validate,
+		SubscriptionService: subscriptionService,
 	}
 }
 
@@ -213,6 +215,20 @@ func (t *taskService) createTask(c *fiber.Ctx, newTask any, taskType model.TaskT
 		return nil, err
 	}
 
+	// Deduct points for the task
+	if t.SubscriptionService != nil {
+		requiredPoints := task.GetPointsForTaskType()
+		if err := t.SubscriptionService.DeductPoints(task.UserID, task.ID, requiredPoints, taskType); err != nil {
+			t.Log.Errorf("Failed to deduct points: %+v", err)
+			// Delete the task if point deduction fails
+			if deleteErr := t.DB.WithContext(c.Context()).Delete(task).Error; deleteErr != nil {
+				t.Log.Errorf("Failed to delete task after point deduction failure: %+v", deleteErr)
+			}
+			return nil, err
+		}
+		t.Log.Infof("Deducted %d points for task %s", requiredPoints, task.ID)
+	}
+
 	if publisherFunc != nil {
 		publisher, err := publisherFunc()
 		if err != nil {
@@ -309,6 +325,21 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
 	}
+
+	// Deduct points for the VTON task
+	if t.SubscriptionService != nil {
+		requiredPoints := task.GetPointsForTaskType()
+		if err := t.SubscriptionService.DeductPoints(task.UserID, task.ID, requiredPoints, task.Type); err != nil {
+			t.Log.Errorf("Failed to deduct points: %+v", err)
+			// Delete the task if point deduction fails
+			if deleteErr := t.DB.WithContext(c.Context()).Delete(task).Error; deleteErr != nil {
+				t.Log.Errorf("Failed to delete task after point deduction failure: %+v", deleteErr)
+			}
+			return nil, err
+		}
+		t.Log.Infof("Deducted %d points for VTON task %s", requiredPoints, task.ID)
+	}
+
 	fashn := NewFashnAIVirtualTryOn(config.FASHN_AI_API_KEY, t.Log)
 	responseData, err := fashn.VirtualTryOn(c.Context(), task.ID, newTask.InputData)
 	if err != nil {
@@ -422,9 +453,10 @@ func (t *taskService) NewEditImageTaskCloudinary(c *fiber.Ctx, newTask *validati
 	webhookUrl := config.WebhookBaseURL + "/cloudinary/" + config.WebhookAPIKey + "/" + task.ID.String() + "?taskType=" + string(newTask.Type)
 	fmt.Println("Webhook URL:", webhookUrl)
 	var transformation string
-	if newTask.InputData.EditType == validation.EditTypeInpaintRemove {
+	switch newTask.InputData.EditType {
+	case validation.EditTypeInpaintRemove:
 		transformation = fmt.Sprintf("e_gen_remove:prompt_%s;multiple_true;remove-shadow_true", *newTask.InputData.EditPrompt)
-	} else if newTask.InputData.EditType == validation.EditTypeInpaintReplace {
+	case validation.EditTypeInpaintReplace:
 		from := strings.TrimSpace(*newTask.InputData.ReplacePrompt.ReplaceFrom)
 		to := strings.TrimSpace(newTask.InputData.ReplacePrompt.ReplaceTo)
 		if from == "" {

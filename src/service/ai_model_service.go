@@ -17,7 +17,7 @@ import (
 type AIModelService interface {
 	CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) error
 	BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIModel) error
-	GetAIModels(c *fiber.Ctx) ([]model.AIModel, error)
+	GetAIModels(c *fiber.Ctx, query *validation.BasePaginationQueryParams) (*GetAIModelsResponse, error)
 	GetAIModelByID(c *fiber.Ctx, id string) (*model.AIModel, error)
 	UpdateAIModel(c *fiber.Ctx, aiModel *model.AIModel) error
 	DeleteAIModel(c *fiber.Ctx, id string) error
@@ -56,7 +56,8 @@ func (s *aIModelService) CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) err
 	err = s.createTask(aiModel, c)
 	if err != nil {
 		s.Log.Errorf("Failed to create task: %+v", err)
-		return nil
+		s.DB.WithContext(c.Context()).Delete(aiModel)
+		return err
 	}
 	return nil
 }
@@ -104,15 +105,33 @@ func (s *aIModelService) BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIMod
 	return nil
 }
 
-func (s *aIModelService) GetAIModels(c *fiber.Ctx) ([]model.AIModel, error) {
+func (s *aIModelService) GetAIModels(c *fiber.Ctx, queryParams *validation.BasePaginationQueryParams) (*GetAIModelsResponse, error) {
 	var aiModels []model.AIModel
+	s.Log.Infof("Query params: %+v", queryParams)
 
 	userId := c.Locals("user").(*model.User).ID
 	if userId == uuid.Nil {
-		return aiModels, nil
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
 	}
-	err := s.DB.WithContext(c.Context()).Where(&model.AIModel{UserID: &userId}).Order("created_at DESC").Find(&aiModels).Error
-	return aiModels, err
+
+	// Fix: Set the model before counting
+	db := s.DB.WithContext(c.Context()).Model(&model.AIModel{}).Where("user_id = ?", userId)
+
+	var count int64
+	if err := db.Count(&count).Error; err != nil {
+		s.Log.Errorf("Failed to count AI models: %+v", err)
+		return nil, err
+	}
+
+	offset := GetPaginationOffset(queryParams.Page, queryParams.PageSize)
+	if err := db.Offset(offset).Limit(queryParams.PageSize).Order("created_at DESC").Find(&aiModels).Error; err != nil {
+		s.Log.Errorf("Failed to get AI models: %+v", err)
+		return nil, err
+	}
+	return &GetAIModelsResponse{
+		Data:  aiModels,
+		Count: int(count),
+	}, nil
 }
 
 func (s *aIModelService) GetAIModelByID(c *fiber.Ctx, id string) (*model.AIModel, error) {

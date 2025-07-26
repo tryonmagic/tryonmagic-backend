@@ -18,4 +18,6 @@ func UserRoutes(v1 fiber.Router, a service.AuthService, u service.UserService, t
 	user.Get("/:userId", m.Auth(a, u, "getUsers"), userController.GetUserByID)
 	user.Patch("/:userId", m.Auth(a, u, "manageUsers"), userController.UpdateUser)
 	user.Delete("/:userId", m.Auth(a, u, "manageUsers"), userController.DeleteUser)
+
+	user.Get("/usage/history", m.Auth(a, u), userController.GetUsageHistory)
 }

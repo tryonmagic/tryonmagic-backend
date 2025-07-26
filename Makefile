@@ -1,8 +1,8 @@
 include .env
 export $(shell sed 's/=.*//' .env)
 
-air:
-	@bin/air
+dev:
+	@air
 start:
 	@go run src/main.go
 lint:

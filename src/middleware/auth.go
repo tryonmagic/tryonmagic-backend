@@ -31,6 +31,7 @@ func verifyShopifyAuth(c *fiber.Ctx, authService service.AuthService, token stri
 }
 func Auth(authService service.AuthService, userService service.UserService, requiredRights ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		utils.Log.Println("auth middleware : started")
 		authHeader := c.Get("x-shopify-session-token")
 		token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 		var user *model.User = nil

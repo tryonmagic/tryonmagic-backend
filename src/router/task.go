@@ -9,12 +9,15 @@ import (
 )
 
 func TaskRoutes(
-	v1 fiber.Router, a service.AuthService, u service.UserService, t service.TaskService,
+	v1 fiber.Router, a service.AuthService, u service.UserService, t service.TaskService, s service.SubscriptionService,
 ) {
 	taskController := controller.NewTaskController(t)
 	config.GoogleConfig()
 
-	auth := v1.Group("/tasks")
-
-	auth.Post("/new", m.Auth(a, u), taskController.NewTask)
+	tasks := v1.Group("/tasks")
+	// Task creation with point checking
+	tasks.Use(m.Auth(a, u))
+	// taskCreation.Use(m.AdminBypassMiddleware()) // Allow admin bypass
+	tasks.Use(m.PointCheckMiddleware(s, ""))
+	tasks.Post("/new", taskController.NewTask)
 }

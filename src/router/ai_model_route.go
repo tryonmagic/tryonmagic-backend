@@ -4,17 +4,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mbbipul/tryonmagic-backend/src/controller"
 	m "github.com/mbbipul/tryonmagic-backend/src/middleware"
+	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"github.com/mbbipul/tryonmagic-backend/src/service"
 )
 
-func AIModelRoutes(v1 fiber.Router, a service.AuthService, u service.UserService, ai service.AIModelService) {
+func AIModelRoutes(v1 fiber.Router, a service.AuthService, u service.UserService, ai service.AIModelService, s service.SubscriptionService) {
 	aiModelController := controller.NewAIModelController(ai)
 
-	auth := v1.Group("/ai-models")
-	auth.Post("/", m.Auth(a, u), aiModelController.CreateAIModel)
-	auth.Post("/bulk", m.Auth(a, u), aiModelController.BulkCreateAIModels)
-	auth.Get("/", m.Auth(a, u), aiModelController.GetAIModels)
-	auth.Get("/:id", m.Auth(a, u), aiModelController.GetAIModelByID)
-	// auth.Patch("/:id", m.Auth(a, u), aiModelController.UpdateAIModel)
-	auth.Delete("/:id", m.Auth(a, u), aiModelController.DeleteAIModel)
+	aiModels := v1.Group("/ai-models")
+	aiModels.Use(m.Auth(a, u))
+	aiModels.Post("/", m.PointCheckMiddleware(s, model.TaskTypeGenerateAIModel), aiModelController.CreateAIModel)
+	aiModels.Post("/bulk", aiModelController.BulkCreateAIModels)
+	aiModels.Get("/", aiModelController.GetAIModels)
+	aiModels.Get("/:id", aiModelController.GetAIModelByID)
+	// aiModels.Patch("/:id", aiModelController.UpdateAIModel)
+	aiModels.Delete("/:id", aiModelController.DeleteAIModel)
 }

@@ -50,7 +50,91 @@ type Task struct {
 	User        *User           `gorm:"foreignKey:UserID;references:ID" json:"user"`
 }
 
+// UsageSummary represents aggregated usage data for dashboard
+type UsageSummary struct {
+	TotalOperations int             `json:"totalOperations"`
+	PointsUsed      int             `json:"pointsUsed"`
+	MostUsedTool    string          `json:"mostUsedTool"`
+	UsageByTool     []ToolUsage     `json:"usageByTool"`
+	RecentActivity  []DailyActivity `json:"recentActivity"`
+}
+
+// ToolUsage represents usage statistics for a specific tool
+type ToolUsage struct {
+	ToolName   string  `json:"toolName"`
+	UsageCount int     `json:"usageCount"`
+	Percentage float64 `json:"percentage"`
+}
+
+// DailyActivity represents daily usage activity
+type DailyActivity struct {
+	Date       string `json:"date"`
+	Operations int    `json:"operations"`
+}
+
 func (task *Task) BeforeCreate(tx *gorm.DB) error {
 	task.ID = uuid.New()
 	return nil
+}
+
+func (task *Task) GetPointsForTaskType() int {
+	return GetPointsForTaskType(task.Type)
+}
+
+func GetPointsForTaskType(taskType TaskType) int {
+	switch taskType {
+	case TaskTypeRemoveBackground:
+		return 1
+	case TaskTypeGenerateAIModel:
+		return 2
+	case TaskTypeVTon:
+		return 3
+	case TaskTypeUpscale:
+		return 1
+	case TaskTypeEnhance:
+		return 1
+	case TaskTypeExpandImage:
+		return 2
+	case TaskTypeEditImage:
+		return 1
+	case TaskTypeProductImageEdit:
+		return 1
+	case TaskTypeReplaceBackground:
+		return 1
+	case TaskTypeGenerateImage:
+		return 2
+	default:
+		return 1
+	}
+}
+
+func (task *Task) GetDisplayNameForTaskType() string {
+	return GetDisplayNameForTaskType(task.Type)
+}
+
+func GetDisplayNameForTaskType(taskType TaskType) string {
+	switch taskType {
+	case TaskTypeRemoveBackground:
+		return "Remove Background"
+	case TaskTypeGenerateAIModel:
+		return "Generate AI Model"
+	case TaskTypeVTon:
+		return "V-Toning"
+	case TaskTypeUpscale:
+		return "Upscale"
+	case TaskTypeEnhance:
+		return "Enhance"
+	case TaskTypeExpandImage:
+		return "Expand Image"
+	case TaskTypeEditImage:
+		return "Edit Image"
+	case TaskTypeProductImageEdit:
+		return "Product Image Editing"
+	case TaskTypeReplaceBackground:
+		return "Replace Background"
+	case TaskTypeGenerateImage:
+		return "Generate Image"
+	default:
+		return "Unknown"
+	}
 }

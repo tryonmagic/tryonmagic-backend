@@ -197,3 +197,26 @@ func (u *UserController) DeleteUser(c *fiber.Ctx) error {
 			Message: "Delete user successfully",
 		})
 }
+
+// @Summary Get user usage history
+// @Description Get comprehensive usage statistics for the authenticated user
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.GenericSuccessResponse
+// @Failure 401 {object} response.GenericErrorResponse
+// @Failure 500 {object} response.GenericErrorResponse
+// @Router /usage/history [get]
+func (u *UserController) GetUsageHistory(c *fiber.Ctx) error {
+	user := c.Locals("user").(*model.User)
+
+	usageSummary, err := u.UserService.GetUsageHistory(c, user.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve usage history")
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.GenericSuccessResponse{
+		Message: "Usage history retrieved successfully",
+		Code:    fiber.StatusOK,
+		Data:    usageSummary,
+	})
+}

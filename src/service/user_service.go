@@ -2,7 +2,9 @@ package service
 
 import (
 	"errors"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"github.com/mbbipul/tryonmagic-backend/src/utils"
 	"github.com/mbbipul/tryonmagic-backend/src/validation"
@@ -22,6 +24,7 @@ type UserService interface {
 	UpdateUser(c *fiber.Ctx, req *validation.UpdateUser, id string) (*model.User, error)
 	DeleteUser(c *fiber.Ctx, id string) error
 	CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin) (*model.User, error)
+	GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.UsageSummary, error)
 }
 
 type userService struct {
@@ -263,4 +266,100 @@ func (s *userService) CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin
 	}
 
 	return userFromDB, nil
+}
+
+func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.UsageSummary, error) {
+	// Get total operations and points from existing tasks
+	var totalOperations int64
+	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+		Where("user_id = ?", userID).
+		Count(&totalOperations).Error; err != nil {
+		return nil, err
+	}
+
+	// Calculate total points based on task types
+	var tasks []model.Task
+	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+		Where("user_id = ?", userID).
+		Select("type").
+		Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+
+	totalPoints := 0
+	for _, task := range tasks {
+		totalPoints += model.GetPointsForTaskType(task.Type)
+	}
+
+	// Get usage by tool from existing tasks
+	var toolUsage []struct {
+		TaskType string `json:"taskType"`
+		Count    int64  `json:"count"`
+	}
+
+	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+		Select("type, COUNT(*) as count").
+		Where("user_id = ?", userID).
+		Group("type").
+		Order("count DESC").
+		Scan(&toolUsage).Error; err != nil {
+		return nil, err
+	}
+
+	// Convert to ToolUsage format with display names
+	usageByTool := make([]model.ToolUsage, len(toolUsage))
+	var mostUsedTool string
+	var maxUsage int64
+
+	for i, usage := range toolUsage {
+		displayName := model.GetDisplayNameForTaskType(model.TaskType(usage.TaskType))
+		percentage := 0.0
+		if totalOperations > 0 {
+			percentage = float64(usage.Count) / float64(totalOperations) * 100
+		}
+
+		usageByTool[i] = model.ToolUsage{
+			ToolName:   displayName,
+			UsageCount: int(usage.Count),
+			Percentage: percentage,
+		}
+
+		if usage.Count > maxUsage {
+			maxUsage = usage.Count
+			mostUsedTool = displayName
+		}
+	}
+
+	// Get recent activity (last 7 days) from existing tasks
+	var recentActivity []struct {
+		Date       string `json:"date"`
+		Operations int64  `json:"operations"`
+	}
+
+	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+		Select("DATE(created_at) as date, COUNT(*) as operations").
+		Where("user_id = ? AND created_at >= ?", userID, sevenDaysAgo).
+		Group("DATE(created_at)").
+		Order("date DESC").
+		Scan(&recentActivity).Error; err != nil {
+		return nil, err
+	}
+
+	// Convert to DailyActivity format
+	dailyActivity := make([]model.DailyActivity, len(recentActivity))
+	for i, activity := range recentActivity {
+		dailyActivity[i] = model.DailyActivity{
+			Date:       activity.Date,
+			Operations: int(activity.Operations),
+		}
+	}
+
+	return &model.UsageSummary{
+		TotalOperations: int(totalOperations),
+		PointsUsed:      totalPoints,
+		MostUsedTool:    mostUsedTool,
+		UsageByTool:     usageByTool,
+		RecentActivity:  dailyActivity,
+	}, nil
 }

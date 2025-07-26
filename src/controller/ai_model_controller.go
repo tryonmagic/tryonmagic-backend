@@ -6,6 +6,8 @@ import (
 	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"github.com/mbbipul/tryonmagic-backend/src/response"
 	"github.com/mbbipul/tryonmagic-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
+	"github.com/mbbipul/tryonmagic-backend/src/validation"
 )
 
 type AIModelController struct {
@@ -54,7 +56,11 @@ func (c *AIModelController) CreateAIModel(ctx *fiber.Ctx) error {
 // @Success      200  {object}  response.GenericSuccessResponse
 // @Failure      500  {object}  response.GenericErrorResponse  "Internal server error"
 func (c *AIModelController) GetAIModels(ctx *fiber.Ctx) error {
-	aiModels, err := c.AIModelService.GetAIModels(ctx)
+	var queryParams validation.BasePaginationQueryParams
+	if err := utils.ParseQueryParams(ctx, &queryParams); err != nil {
+		return err
+	}
+	aiModels, err := c.AIModelService.GetAIModels(ctx, &queryParams)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(response.GenericErrorResponse{
 			Code:    fiber.StatusInternalServerError,
@@ -62,10 +68,14 @@ func (c *AIModelController) GetAIModels(ctx *fiber.Ctx) error {
 			Errors:  nil,
 		})
 	}
-	return ctx.JSON(response.GenericSuccessResponse{
-		Message: "AI models fetched successfully",
-		Code:    fiber.StatusOK,
-		Data:    aiModels,
+	return ctx.JSON(response.SuccessWithPaginate[model.AIModel]{
+		Message:      "AI models fetched successfully",
+		Code:         fiber.StatusOK,
+		Results:      aiModels.Data,
+		Page:         queryParams.Page,
+		Limit:        queryParams.PageSize,
+		TotalPages:   service.CalculateTotalPages(int64(aiModels.Count), queryParams.PageSize),
+		TotalResults: int64(aiModels.Count),
 	})
 }
 

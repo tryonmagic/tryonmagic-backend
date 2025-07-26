@@ -43,8 +43,8 @@ type SuccessWithPaginate[T any] struct {
 	Results      []T    `json:"results"`
 	Page         int    `json:"page"`
 	Limit        int    `json:"limit"`
-	TotalPages   int64  `json:"total_pages"`
-	TotalResults int64  `json:"total_results"`
+	TotalPages   int64  `json:"totalPages"`
+	TotalResults int64  `json:"totalResults"`
 }
 
 type ErrorDetails struct {

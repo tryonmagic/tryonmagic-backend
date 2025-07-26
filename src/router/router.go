@@ -17,7 +17,9 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	tokenService := service.NewTokenService(db, validate, userService)
 	authService := service.NewAuthService(db, validate, userService, tokenService)
 	storageService := service.NewStorageService(db, validate)
-	taskService := service.NewTaskService(db, validate)
+	subscriptionService := service.NewSubscriptionService(db)
+	taskService := service.NewTaskService(db, subscriptionService, validate)
+
 	aiModelService := service.NewAIModelService(db, validate, taskService)
 	garmentService := service.NewGarmentService(db, validate)
 	webhookService := service.NewWebhookService(db, validate)
@@ -28,8 +30,9 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	AuthRoutes(v1, authService, userService, tokenService, emailService)
 	UserRoutes(v1, authService, userService, tokenService)
 	StorageRoutes(v1, authService, userService, storageService)
-	TaskRoutes(v1, authService, userService, taskService)
-	AIModelRoutes(v1, authService, userService, aiModelService)
+	TaskRoutes(v1, authService, userService, taskService, subscriptionService)
+	SubscriptionRoutes(v1, authService, userService, subscriptionService)
+	AIModelRoutes(v1, authService, userService, aiModelService, subscriptionService)
 	GarmentRoutes(v1, authService, userService, garmentService)
 	WebhookRoutes(v1, webhookService)
 

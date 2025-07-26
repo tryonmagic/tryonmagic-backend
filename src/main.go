@@ -127,7 +127,7 @@ func setupSocketIO(app *fiber.App) {
 		fmt.Printf("Error event - User: %s", ep.Kws.GetStringAttribute("user_id"))
 	})
 
-	app.Get("/ws/:id", socketio.New(func(kws *socketio.Websocket) {
+	app.Get("v1/ws/:id", socketio.New(func(kws *socketio.Websocket) {
 		// Retrieve the user id from endpoint
 		userId := kws.Params("id")
 
@@ -152,7 +152,7 @@ func setupSocketIO(app *fiber.App) {
 		// Broadcast to all the connected users the newcomer
 		// kws.Broadcast([]byte(fmt.Sprintf("New user connected: %s and UUID: %s", userId, kws.UUID)), true)
 		// Write welcome message
-		kws.Emit([]byte(fmt.Sprintf("Hi!")))
+		// kws.Emit([]byte(fmt.Sprintf("Hi!")))
 	}))
 }
 

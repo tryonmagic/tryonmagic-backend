@@ -7,6 +7,24 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+type SortOrder string
+
+const (
+	SortOrderAsc  SortOrder = "asc"
+	SortOrderDesc SortOrder = "desc"
+)
+
+type BasePaginationQueryParams struct {
+	// Note: Fiber's QueryParser does not support struct tag defaults.
+	// You must set defaults in code, not via struct tags.
+	Page         int       `query:"page" validate:"omitempty,number" default:"1"`
+	PageSize     int       `query:"pageSize" validate:"omitempty,number,max=200" default:"10"`
+	Search       *string   `query:"search" validate:"omitempty"`
+	SortBy       *string   `query:"sortBy" validate:"omitempty"`
+	SortOrder    SortOrder `query:"sortOrder" validate:"omitempty,oneof=asc desc" default:"desc"`
+	SearchFields *[]string `query:"searchFields" validate:"omitempty"`
+}
+
 var customMessages = map[string]string{
 	"required": "Field %s must be filled",
 	"email":    "Invalid email address for field %s",
