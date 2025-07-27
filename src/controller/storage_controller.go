@@ -4,6 +4,7 @@ import (
 	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"github.com/mbbipul/tryonmagic-backend/src/response"
 	"github.com/mbbipul/tryonmagic-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 	"github.com/mbbipul/tryonmagic-backend/src/validation"
 
 	"github.com/gofiber/fiber/v2"
@@ -54,14 +55,30 @@ func (s *StorageController) SaveFile(c *fiber.Ctx) error {
 // @Router /storage/files [get]
 func (s *StorageController) GetFiles(c *fiber.Ctx) error {
 	user := c.Locals("user").(*model.User)
-	files, err := s.StorageService.GetFilesByUserID(c, user.ID)
+	queryParams := &validation.GetFilesQueryParams{}
+	if err := utils.ParseQueryParams(c, queryParams); err != nil {
+		return err
+	}
+	if queryParams.Page == 0 {
+		queryParams.Page = 1
+	}
+	if queryParams.PageSize == 0 {
+		queryParams.PageSize = 10
+	}
+	files, err := s.StorageService.GetFilesByUserID(c.Context(), user.ID, queryParams)
 	if err != nil {
 		return err
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.GenericSuccessResponse{
+	return c.Status(fiber.StatusOK).JSON(response.SuccessWithPaginate[model.File]{
 		Message: "Files retrieved successfully",
 		Code:    fiber.StatusOK,
-		Data:    files,
+		Data: response.PaginateData[model.File]{
+			Results:      files.Results,
+			Page:         queryParams.Page,
+			Limit:        queryParams.PageSize,
+			TotalPages:   service.CalculateTotalPages(int64(files.Count), queryParams.PageSize),
+			TotalResults: files.Count,
+		},
 	})
 }

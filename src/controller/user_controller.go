@@ -50,14 +50,16 @@ func (u *UserController) GetUsers(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).
 		JSON(response.SuccessWithPaginate[model.User]{
-			Code:         fiber.StatusOK,
-			Status:       "success",
-			Message:      "Get all users successfully",
-			Results:      users,
-			Page:         query.Page,
-			Limit:        query.Limit,
-			TotalPages:   int64(math.Ceil(float64(totalResults) / float64(query.Limit))),
-			TotalResults: totalResults,
+			Code:    fiber.StatusOK,
+			Status:  "success",
+			Message: "Get all users successfully",
+			Data: response.PaginateData[model.User]{
+				Results:      users,
+				Page:         query.Page,
+				Limit:        query.Limit,
+				TotalPages:   int64(math.Ceil(float64(totalResults) / float64(query.Limit))),
+				TotalResults: totalResults,
+			},
 		})
 }
 

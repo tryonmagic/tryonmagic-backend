@@ -36,15 +36,19 @@ type SuccessWithTokens struct {
 	Tokens  Tokens     `json:"tokens"`
 }
 
+type PaginateData[T any] struct {
+	Results      []T   `json:"results"`
+	Page         int   `json:"page"`
+	Limit        int   `json:"limit"`
+	TotalPages   int64 `json:"totalPages"`
+	TotalResults int64 `json:"totalResults"`
+}
+
 type SuccessWithPaginate[T any] struct {
-	Code         int    `json:"code"`
-	Status       string `json:"status"`
-	Message      string `json:"message"`
-	Results      []T    `json:"results"`
-	Page         int    `json:"page"`
-	Limit        int    `json:"limit"`
-	TotalPages   int64  `json:"totalPages"`
-	TotalResults int64  `json:"totalResults"`
+	Code    int             `json:"code"`
+	Status  string          `json:"status"`
+	Message string          `json:"message"`
+	Data    PaginateData[T] `json:"data"`
 }
 
 type ErrorDetails struct {

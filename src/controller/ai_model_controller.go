@@ -69,13 +69,15 @@ func (c *AIModelController) GetAIModels(ctx *fiber.Ctx) error {
 		})
 	}
 	return ctx.JSON(response.SuccessWithPaginate[model.AIModel]{
-		Message:      "AI models fetched successfully",
-		Code:         fiber.StatusOK,
-		Results:      aiModels.Data,
-		Page:         queryParams.Page,
-		Limit:        queryParams.PageSize,
-		TotalPages:   service.CalculateTotalPages(int64(aiModels.Count), queryParams.PageSize),
-		TotalResults: int64(aiModels.Count),
+		Message: "AI models fetched successfully",
+		Code:    fiber.StatusOK,
+		Data: response.PaginateData[model.AIModel]{
+			Results:      aiModels.Data,
+			Page:         queryParams.Page,
+			Limit:        queryParams.PageSize,
+			TotalPages:   service.CalculateTotalPages(int64(aiModels.Count), queryParams.PageSize),
+			TotalResults: int64(aiModels.Count),
+		},
 	})
 }
 

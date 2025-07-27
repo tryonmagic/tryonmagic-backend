@@ -13,3 +13,8 @@ type SaveFile struct {
 	Mime     string `json:"mime" validate:"required,max=50" example:"image/png"`
 	// ThumbHash *[]byte `json:"thumbHash" validate:"omitempty" example:"[0,1,2,3]"`
 }
+
+type GetFilesQueryParams struct {
+	BasePaginationQueryParams
+	Types *[]string `query:"types" validate:"omitempty"`
+}
