@@ -3,6 +3,8 @@ package cloudinaryapi
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/cloudinary/cloudinary-go/v2/api"
@@ -52,7 +54,13 @@ type NotificationContext struct {
 	TriggeredBy map[string]interface{} `json:"triggered_by"`
 }
 
-func UploadImageToCloudinary(fileLocation string, destKey string, transformation string, webhookUrl string, ctx context.Context) (*string, error) {
+func UploadImageToCloudinary(fileLocation string, destKey string, transformation string, webhookUrl string, parentCtx context.Context) (*string, error) {
+	// Create a new context with a longer timeout specifically for Cloudinary uploads
+	// Use 5 minutes timeout for uploads to handle large images
+	uploadCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	fmt.Printf("Starting Cloudinary upload for key: %s, transformation: %s\n", destKey, transformation)
 
 	cld := Credentials()
 	uploadParams := uploader.UploadParams{
@@ -63,13 +71,21 @@ func UploadImageToCloudinary(fileLocation string, destKey string, transformation
 		EagerAsync:           api.Bool(true),
 		EagerNotificationURL: webhookUrl,
 	}
-	resp, err := cld.Upload.Upload(ctx, fileLocation, uploadParams)
-	if err != nil {
-		fmt.Println("Error uploading image:", err)
-		return nil, err
-	}
-	fmt.Println("Image uploaded successfully:", resp.SecureURL)
 
+	startTime := time.Now()
+	resp, err := cld.Upload.Upload(uploadCtx, fileLocation, uploadParams)
+	uploadDuration := time.Since(startTime)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "context deadline exceeded") {
+			fmt.Printf("Cloudinary upload timed out after %v for key: %s\n", uploadDuration, destKey)
+			return nil, fmt.Errorf("image upload timeout: the image upload took too long to complete. Please try with a smaller image or try again later")
+		}
+		fmt.Printf("Error uploading image to Cloudinary (took %v): %v\n", uploadDuration, err)
+		return nil, fmt.Errorf("failed to upload image: %w", err)
+	}
+
+	fmt.Printf("Image uploaded successfully in %v: %s\n", uploadDuration, resp.SecureURL)
 	return &resp.SecureURL, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 type HttpDownloader struct {
@@ -38,7 +39,9 @@ func Info(format string, args ...interface{}) {
 
 func NewHttpDownloader() HttpDownloader {
 	return HttpDownloader{
-		Client:     &http.Client{},
+		Client: &http.Client{
+			Timeout: 2 * time.Minute, // Set 2-minute timeout for image downloads
+		},
 		SaveToFile: true,
 		Threads:    4,
 	}
