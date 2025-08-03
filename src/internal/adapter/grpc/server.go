@@ -125,7 +125,7 @@ func (t *server) UpdateTask(taskInfo *UpdateTaskStatusRequest) (*model.Task, err
 	}
 
 	userId := taskInfo.UserId
-	err = socket.EmitEventToUser(userId, "task-progress", map[string]any{
+	err = socket.EmitEventToUser(userId, "task-progress-"+taskInfo.TaskId, map[string]any{
 		"id":         taskInfo.TaskId,
 		"type":       task.Type,
 		"status":     task.Status,

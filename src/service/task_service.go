@@ -60,7 +60,8 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 		return nil, err
 	}
 	t.Log.Printf("Creating new task of type %v, input: %v", newTask.Type, newTask.InputData)
-	if newTask.Type == model.TaskTypeRemoveBackground {
+	switch newTask.Type {
+	case model.TaskTypeRemoveBackground:
 
 		// Unmarshal InputData into RemoveBackgroundTaskInput
 		var inputData validation.RemoveBackgroundTaskInput
@@ -78,7 +79,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeReplaceBackground {
+	case model.TaskTypeReplaceBackground:
 		// Unmarshal InputData into ReplaceBackgroundTaskInput
 		var inputData validation.ReplaceBackgroundTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
@@ -95,7 +96,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeGenerateAIModel {
+	case model.TaskTypeGenerateAIModel:
 		var inputData validation.GenerateAIModelTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {
@@ -111,7 +112,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeVTon {
+	case model.TaskTypeVTon:
 		var inputData validation.VTONTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {
@@ -126,7 +127,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeUpscale || newTask.Type == model.TaskTypeEnhance {
+	case model.TaskTypeUpscale, model.TaskTypeEnhance:
 		var inputData validation.UpscaleTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {
@@ -141,7 +142,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeExpandImage {
+	case model.TaskTypeExpandImage:
 		var inputData validation.ExpandImageTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {
@@ -156,7 +157,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeEditImage {
+	case model.TaskTypeEditImage:
 		var inputData validation.EditImageTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {
@@ -171,7 +172,7 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	} else if newTask.Type == model.TaskTypeProductImageEdit {
+	case model.TaskTypeProductImageEdit:
 		var inputData validation.ProductImageEditTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {

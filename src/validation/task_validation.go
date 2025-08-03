@@ -43,6 +43,7 @@ type ReplaceBackgroundTaskInput struct {
 	BackgroundSourceType      BackgroundSourceType `json:"backgroundSourceType" validate:"required,oneof=IMAGE COLOR PROMPT" example:"URL"`
 	BackgroundImageSourceType *ImageSourceType     `json:"backgroundImageSourceType" validate:"required,oneof=URL BASE64" example:"URL"`
 	BackgroundSourceValue     string               `json:"backgroundSourceValue" validate:"required" example:"https://example.com/background.jpg"`
+	IsBackgroundRemoved       bool                 `json:"isBackgroundRemoved" example:"true"`
 }
 
 type GenerateAIModelTaskInput struct {

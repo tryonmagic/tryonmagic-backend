@@ -5,3 +5,5 @@
     - [ ] save resized image to s3 on task completion to reduce cdn load time
     - [ ] don't return fashnaiton image url in response
     - [ ] for multiple variants deduct multiple times per variant from the user balance
+    - [ ] enhance AI model generation prompt
+    - [ ] use imagen bg swap for replace bg with AI generated bg

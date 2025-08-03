@@ -77,7 +77,7 @@ func (t *webhookService) FashnAIVTonWebhook(c *fiber.Ctx, taskId uuid.UUID, resp
 		fmt.Printf("Failed to update task: %+v", err)
 		return err
 	}
-	err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress", map[string]any{
+	err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress-"+taskObj.ID.String(), map[string]any{
 		"id":         taskObj.ID,
 		"type":       taskObj.Type,
 		"status":     taskObj.Status,
@@ -144,7 +144,7 @@ func (t *webhookService) CloudinaryWebhook(c context.Context, taskId uuid.UUID, 
 		fmt.Printf("Failed to update task: %+v", err)
 		return err
 	}
-	err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress", map[string]any{
+	err = socket.EmitEventToUser(taskObj.UserID.String(), "task-progress-"+taskObj.ID.String(), map[string]any{
 		"id":         taskObj.ID,
 		"type":       taskObj.Type,
 		"status":     taskObj.Status,
