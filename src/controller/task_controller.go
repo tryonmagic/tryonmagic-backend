@@ -34,7 +34,7 @@ func (t *TaskController) NewTask(c *fiber.Ctx) error {
 
 	task, err := t.TaskService.NewTask(c, req)
 	if err != nil {
-		return err
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(response.GenericSuccessResponse{

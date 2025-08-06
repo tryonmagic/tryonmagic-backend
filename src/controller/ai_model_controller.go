@@ -33,7 +33,8 @@ func (c *AIModelController) CreateAIModel(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&aiModel); err != nil {
 		return err
 	}
-	if err := c.AIModelService.CreateAIModel(ctx, &aiModel); err != nil {
+	newTask, err := c.AIModelService.CreateAIModel(ctx, &aiModel)
+	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(response.GenericErrorResponse{
 			Code:    fiber.StatusInternalServerError,
 			Message: "Failed to create AI model",
@@ -43,7 +44,7 @@ func (c *AIModelController) CreateAIModel(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(response.GenericSuccessResponse{
 		Message: "AI model created successfully",
 		Code:    fiber.StatusCreated,
-		Data:    aiModel,
+		Data:    newTask,
 	})
 }
 

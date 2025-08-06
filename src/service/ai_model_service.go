@@ -15,7 +15,7 @@ import (
 )
 
 type AIModelService interface {
-	CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) error
+	CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) (*model.Task, error)
 	BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIModel) error
 	GetAIModels(c *fiber.Ctx, query *validation.BasePaginationQueryParams) (*GetAIModelsResponse, error)
 	GetAIModelByID(c *fiber.Ctx, id string) (*model.AIModel, error)
@@ -39,7 +39,7 @@ func NewAIModelService(db *gorm.DB, validate *validator.Validate, taskService Ta
 	}
 }
 
-func (s *aIModelService) CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) error {
+func (s *aIModelService) CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) (*model.Task, error) {
 	userId := c.Locals("user").(*model.User).ID
 	aiModel.UserID = &userId
 	aiModel.GenAIName = "imagen-3.0-generate-002"
@@ -50,24 +50,25 @@ func (s *aIModelService) CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) err
 	err := s.DB.WithContext(c.Context()).Create(aiModel).Error
 	if err != nil {
 		s.Log.Errorf("Failed to create AI model: %+v", err)
-		return err
+		return nil, err
 	}
 	s.Log.Infof("AI model created successfully: %s", aiModel.ID)
-	err = s.createTask(aiModel, c)
+	newTask, err := s.createTask(aiModel, c)
 	if err != nil {
 		s.Log.Errorf("Failed to create task: %+v", err)
 		s.DB.WithContext(c.Context()).Delete(aiModel)
-		return err
+		return nil, err
 	}
-	return nil
+	s.DB.WithContext(c.Context()).Model(aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
+	return newTask, nil
 }
 
-func (s *aIModelService) createTask(aiModel *model.AIModel, c *fiber.Ctx) error {
+func (s *aIModelService) createTask(aiModel *model.AIModel, c *fiber.Ctx) (*model.Task, error) {
 	s.Log.Infof("Creating task for AI model: %v", aiModel)
 	inputData, err := json.Marshal(aiModel)
 	if err != nil {
 		s.Log.Errorf("Failed to marshal input data: %+v", err)
-		return err
+		return nil, err
 	}
 	task := &validation.NewTask[any]{
 		Type:      model.TaskTypeGenerateAIModel,
@@ -78,11 +79,11 @@ func (s *aIModelService) createTask(aiModel *model.AIModel, c *fiber.Ctx) error 
 	newTask, err := s.TaskService.NewTask(c, task)
 	if err != nil {
 		s.Log.Errorf("Failed to create task: %+v", err)
-		return nil
+		return nil, err
 	}
 	s.Log.Infof("Task created successfully for %v, id: %v", newTask.Type, newTask.ID)
 	s.DB.WithContext(c.Context()).Model(aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
-	return nil
+	return newTask, nil
 }
 
 func (s *aIModelService) BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIModel) error {
@@ -96,11 +97,12 @@ func (s *aIModelService) BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIMod
 	}
 	s.Log.Infof("Bulk AI models created successfully: %d models", len(aiModels))
 	for _, aiModel := range aiModels {
-		err = s.createTask(&aiModel, c)
+		newTask, err := s.createTask(&aiModel, c)
 		if err != nil {
 			s.Log.Errorf("Failed to create task: %+v", err)
-			return nil
+			return err
 		}
+		s.DB.WithContext(c.Context()).Model(&aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
 	}
 	return nil
 }
