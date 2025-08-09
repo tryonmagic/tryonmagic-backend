@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/cloudinary/cloudinary-go/v2/api"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/gofiber/fiber/v2"
 	s3ada "github.com/mbbipul/tryonmagic-backend/src/internal/adapter/s3"
 	"github.com/mbbipul/tryonmagic-backend/src/pkg/downloader"
 )
@@ -56,13 +57,19 @@ type NotificationContext struct {
 
 func UploadImageToCloudinary(fileLocation string, destKey string, transformation string, webhookUrl string, parentCtx context.Context) (*string, error) {
 	// Create a new context with a longer timeout specifically for Cloudinary uploads
-	// Use 5 minutes timeout for uploads to handle large images
-	uploadCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	// Use 8 minutes timeout for uploads to handle large images (slightly less than server timeout)
+	uploadCtx, cancel := context.WithTimeout(context.Background(), 8*time.Minute)
 	defer cancel()
 
 	fmt.Printf("Starting Cloudinary upload for key: %s, transformation: %s\n", destKey, transformation)
 
-	cld := Credentials()
+	cld := NewCloudinaryClient()
+
+	// Debug: Log the configured timeouts
+	fmt.Printf("Cloudinary SDK Timeout: %d seconds, UploadTimeout: %d seconds\n",
+		cld.Config.API.Timeout, cld.Config.API.UploadTimeout)
+	fmt.Printf("Cloudinary HTTP Client Timeout: %v\n", cld.Upload.Client.Timeout)
+
 	uploadParams := uploader.UploadParams{
 		PublicID:             destKey,
 		UniqueFilename:       api.Bool(false),
@@ -73,16 +80,19 @@ func UploadImageToCloudinary(fileLocation string, destKey string, transformation
 	}
 
 	startTime := time.Now()
+	fmt.Printf("Cloudinary upload attempt started at: %v for key: %s\n", startTime, destKey)
+
 	resp, err := cld.Upload.Upload(uploadCtx, fileLocation, uploadParams)
 	uploadDuration := time.Since(startTime)
 
 	if err != nil {
+		fmt.Printf("Cloudinary upload failed after %v for key: %s, error: %v\n", uploadDuration, destKey, err)
 		if strings.Contains(err.Error(), "context deadline exceeded") {
 			fmt.Printf("Cloudinary upload timed out after %v for key: %s\n", uploadDuration, destKey)
-			return nil, fmt.Errorf("image upload timeout: the image upload took too long to complete. Please try with a smaller image or try again later")
+			return nil, fiber.NewError(fiber.StatusInternalServerError, "Something went wrong. Please try again later!")
 		}
 		fmt.Printf("Error uploading image to Cloudinary (took %v): %v\n", uploadDuration, err)
-		return nil, fmt.Errorf("failed to upload image: %w", err)
+		return nil, fiber.NewError(fiber.StatusInternalServerError, "Something went wrong. Please try again later!")
 	}
 
 	fmt.Printf("Image uploaded successfully in %v: %s\n", uploadDuration, resp.SecureURL)
@@ -90,7 +100,7 @@ func UploadImageToCloudinary(fileLocation string, destKey string, transformation
 }
 
 func TransformImage(key string, transformation string) (string, error) {
-	cld := Credentials()
+	cld := NewCloudinaryClient()
 	image, err := cld.Image(key)
 	if err != nil {
 		fmt.Println("error")
