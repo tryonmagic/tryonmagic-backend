@@ -351,7 +351,7 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
 		Preload("TransactionHistory").
 		Where("user_id = ?", userID).
-		Order("created_at DESC").
+		Order("tasks.created_at DESC").
 		Limit(10).
 		Find(&recentTasks).Error; err != nil {
 		return nil, err
@@ -398,7 +398,7 @@ func (t *userService) GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams valid
 	var tasks []model.Task
 	fmt.Printf("userID: %+v\n", userID)
 	fmt.Printf("queryParams: %+v\n", queryParams)
-	query := t.DB.WithContext(c.Context()).Model(&model.Task{}).Where("user_id = ?", userID)
+	query := t.DB.WithContext(c.Context()).Model(&model.Task{}).Where("user_id = ?", userID).Order("tasks.created_at DESC")
 	var count int64
 	if err := query.Count(&count).Error; err != nil {
 		t.Log.Errorf("Failed to get tasks count: %+v", err)
