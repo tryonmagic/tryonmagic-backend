@@ -290,7 +290,7 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 
 	var userSubscription model.UserSubscription
 	if err := t.DB.WithContext(c.Context()).Model(&model.Subscription{}).
-		Select("points_balance, points_used, points_total, monthly_points, last_reset_date, next_reset_date").
+		Select("points_balance, points_used,status,plan, points_total, monthly_points, last_reset_date, next_reset_date, expires_at").
 		Where("user_id = ?", userID).
 		First(&userSubscription).Error; err != nil {
 		t.Log.Errorf("Failed to get user subscription: %+v", err)
