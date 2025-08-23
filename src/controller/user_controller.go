@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"github.com/mbbipul/tryonmagic-backend/src/response"
 	"github.com/mbbipul/tryonmagic-backend/src/service"
+	"github.com/mbbipul/tryonmagic-backend/src/utils"
 	"github.com/mbbipul/tryonmagic-backend/src/validation"
 
 	"github.com/gofiber/fiber/v2"
@@ -76,6 +78,9 @@ func (u *UserController) GetUsers(c *fiber.Ctx) error {
 // @Failure      404  {object}  example.NotFound  "Not found"
 func (u *UserController) GetUserByID(c *fiber.Ctx) error {
 	userID := c.Params("userId")
+	if userID == "" {
+		userID = c.Locals("user").(*model.User).ID.String()
+	}
 
 	if _, err := uuid.Parse(userID); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid user ID")
@@ -87,11 +92,10 @@ func (u *UserController) GetUserByID(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).
-		JSON(response.SuccessWithUser{
+		JSON(response.GenericSuccessResponse{
 			Code:    fiber.StatusOK,
-			Status:  "success",
 			Message: "Get user successfully",
-			User:    *user,
+			Data:    user,
 		})
 }
 
@@ -220,5 +224,36 @@ func (u *UserController) GetUsageHistory(c *fiber.Ctx) error {
 		Message: "Usage history retrieved successfully",
 		Code:    fiber.StatusOK,
 		Data:    usageSummary,
+	})
+}
+
+func (u *UserController) GetTasks(c *fiber.Ctx) error {
+	fmt.Println("GetTasks")
+	user := c.Locals("user").(*model.User)
+	queryParams := &validation.GetTasksQueryParams{}
+	if err := utils.ParseQueryParams(c, queryParams); err != nil {
+		return err
+	}
+	if queryParams.Page == 0 {
+		queryParams.Page = 1
+	}
+	if queryParams.PageSize == 0 {
+		queryParams.PageSize = 10
+	}
+	tasks, err := u.UserService.GetTasks(c, user.ID, *queryParams)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.SuccessWithPaginate[model.Task]{
+		Message: "Tasks retrieved successfully",
+		Code:    fiber.StatusOK,
+		Data: response.PaginateData[model.Task]{
+			Results:      tasks.Results,
+			Page:         queryParams.Page,
+			Limit:        queryParams.PageSize,
+			TotalPages:   service.CalculateTotalPages(int64(tasks.Count), queryParams.PageSize),
+			TotalResults: tasks.Count,
+		},
 	})
 }

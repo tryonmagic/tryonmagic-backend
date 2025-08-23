@@ -27,3 +27,7 @@ type QueryUser struct {
 	Limit  int    `validate:"omitempty,number,max=50"`
 	Search string `validate:"omitempty,max=50"`
 }
+
+type GetTasksQueryParams struct {
+	BasePaginationQueryParams
+}

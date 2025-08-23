@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,28 +36,43 @@ const (
 )
 
 type Task struct {
-	ID          uuid.UUID       `gorm:"primaryKey;type:char(36)" json:"id"` // UUID
-	Type        TaskType        `gorm:"not null" json:"type"`
-	Status      TaskStatus      `gorm:"default:PENDING;not null" json:"status"`
-	InputData   datatypes.JSON  `gorm:"type:text" json:"inputData"`
-	ResultData  *datatypes.JSON `gorm:"type:text" json:"resultData"`
-	Error       *string         `gorm:"type:text" json:"error"`
-	RetryCount  int             `gorm:"default:0" json:"retryCount"`
-	CreatedAt   time.Time       `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt   time.Time       `gorm:"autoUpdateTime" json:"updatedAt"`
-	StartedAt   *time.Time      `gorm:"index" json:"startedAt"`
-	CompletedAt *time.Time      `gorm:"index" json:"completedAt"`
-	UserID      uuid.UUID       `gorm:"not null" json:"userId"`
-	User        *User           `gorm:"foreignKey:UserID;references:ID" json:"user"`
+	ID                 uuid.UUID           `gorm:"primaryKey;type:char(36)" json:"id"` // UUID
+	Type               TaskType            `gorm:"not null" json:"type"`
+	Status             TaskStatus          `gorm:"default:PENDING;not null" json:"status"`
+	InputData          datatypes.JSON      `gorm:"type:text" json:"inputData"`
+	ResultData         *datatypes.JSON     `gorm:"type:text" json:"resultData"`
+	Error              *string             `gorm:"type:text" json:"error"`
+	RetryCount         int                 `gorm:"default:0" json:"retryCount"`
+	CreatedAt          time.Time           `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt          time.Time           `gorm:"autoUpdateTime" json:"updatedAt"`
+	StartedAt          *time.Time          `gorm:"index" json:"startedAt"`
+	CompletedAt        *time.Time          `gorm:"index" json:"completedAt"`
+	UserID             uuid.UUID           `gorm:"not null" json:"userId"`
+	User               *User               `gorm:"foreignKey:UserID;references:ID" json:"user"`
+	TransactionHistory *TransactionHistory `gorm:"foreignKey:TaskID;references:ID" json:"transactionHistory"`
+}
+
+type UserSubscription struct {
+	Plan          SubscriptionPlan   `gorm:"not null;default:FREE" json:"plan"`
+	Status        SubscriptionStatus `gorm:"not null;default:ACTIVE" json:"status"`
+	PointsBalance int                `gorm:"not null;default:0" json:"pointsBalance"`
+	PointsUsed    int                `gorm:"not null;default:0" json:"pointsUsed"`
+	PointsTotal   int                `gorm:"not null;default:0" json:"pointsTotal"`
+	MonthlyPoints int                `gorm:"not null;default:0" json:"monthlyPoints"`
+	LastResetDate time.Time          `gorm:"not null" json:"lastResetDate"`
+	NextResetDate time.Time          `gorm:"not null" json:"nextResetDate"`
 }
 
 // UsageSummary represents aggregated usage data for dashboard
 type UsageSummary struct {
-	TotalOperations int             `json:"totalOperations"`
-	PointsUsed      int             `json:"pointsUsed"`
-	MostUsedTool    string          `json:"mostUsedTool"`
-	UsageByTool     []ToolUsage     `json:"usageByTool"`
-	RecentActivity  []DailyActivity `json:"recentActivity"`
+	TotalPoints         int              `json:"totalPoints"`
+	CurrentSubscription UserSubscription `json:"currentSubscription"`
+	TotalOperations     int              `json:"totalOperations"`
+	PointsUsed          int              `json:"pointsUsed"`
+	MostUsedTool        ToolUsage        `json:"mostUsedTool"`
+	UsageByTool         []ToolUsage      `json:"usageByTool"`
+	DailyActivity       []DailyActivity  `json:"dailyActivity"`
+	RecentOperations    []Task           `json:"recentOperations"`
 }
 
 // ToolUsage represents usage statistics for a specific tool
@@ -113,6 +129,7 @@ func (task *Task) GetDisplayNameForTaskType() string {
 }
 
 func GetDisplayNameForTaskType(taskType TaskType) string {
+	fmt.Println("taskType", taskType)
 	switch taskType {
 	case TaskTypeRemoveBackground:
 		return "Remove Background"

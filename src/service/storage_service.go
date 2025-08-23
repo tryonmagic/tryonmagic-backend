@@ -16,7 +16,7 @@ import (
 
 type StorageService interface {
 	SaveFile(c *fiber.Ctx, req *validation.SaveFile) (*model.File, error)
-	GetFilesByUserID(c context.Context, userID uuid.UUID, queryParams *validation.GetFilesQueryParams) (*GetFilesResponse, error)
+	GetFilesByUserID(c context.Context, userID uuid.UUID, queryParams *validation.GetFilesQueryParams) (*PaginationResult[model.File], error)
 }
 
 type storageService struct {
@@ -60,7 +60,7 @@ func (s *storageService) SaveFile(c *fiber.Ctx, req *validation.SaveFile) (*mode
 	return file, nil
 }
 
-func (s *storageService) GetFilesByUserID(c context.Context, userID uuid.UUID, queryParams *validation.GetFilesQueryParams) (*GetFilesResponse, error) {
+func (s *storageService) GetFilesByUserID(c context.Context, userID uuid.UUID, queryParams *validation.GetFilesQueryParams) (*PaginationResult[model.File], error) {
 
 	var files []model.File
 	query := s.DB.WithContext(c).Model(&model.File{}).Where("user_id = ?", userID)
@@ -82,7 +82,7 @@ func (s *storageService) GetFilesByUserID(c context.Context, userID uuid.UUID, q
 		s.Log.Errorf("Failed to get files: %+v", err)
 		return nil, err
 	}
-	return &GetFilesResponse{
+	return &PaginationResult[model.File]{
 		Results: files,
 		Count:   count,
 	}, nil

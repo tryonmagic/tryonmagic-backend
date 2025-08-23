@@ -7,7 +7,7 @@ type GetAIModelsResponse struct {
 	Count int             `json:"count"`
 }
 
-type GetFilesResponse struct {
-	Results []model.File `json:"results"`
-	Count   int64        `json:"count"`
+type PaginationResult[T any] struct {
+	Results []T   `json:"results"`
+	Count   int64 `json:"count"`
 }

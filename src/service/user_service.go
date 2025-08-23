@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,6 +26,7 @@ type UserService interface {
 	DeleteUser(c *fiber.Ctx, id string) error
 	CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin) (*model.User, error)
 	GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.UsageSummary, error)
+	GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams validation.GetTasksQueryParams) (*PaginationResult[model.Task], error)
 }
 
 type userService struct {
@@ -277,24 +279,35 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 		return nil, err
 	}
 
-	// Calculate total points based on task types
-	var tasks []model.Task
-	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+	var transactionHistory []model.TransactionHistory
+	if err := t.DB.WithContext(c.Context()).Model(&model.TransactionHistory{}).
+		Select("task_id, transaction_type, transaction_status, net_amount").
 		Where("user_id = ?", userID).
-		Select("type").
-		Find(&tasks).Error; err != nil {
+		Find(&transactionHistory).Error; err != nil {
+		t.Log.Errorf("Failed to get transaction history: %+v", err)
 		return nil, err
 	}
 
-	totalPoints := 0
-	for _, task := range tasks {
-		totalPoints += model.GetPointsForTaskType(task.Type)
+	var userSubscription model.UserSubscription
+	if err := t.DB.WithContext(c.Context()).Model(&model.Subscription{}).
+		Select("points_balance, points_used, points_total, monthly_points, last_reset_date, next_reset_date").
+		Where("user_id = ?", userID).
+		First(&userSubscription).Error; err != nil {
+		t.Log.Errorf("Failed to get user subscription: %+v", err)
+		return nil, err
+	}
+
+	totalCreditPoints := 0
+	for _, transaction := range transactionHistory {
+		if transaction.TransactionType == model.TransactionTypeTaskExecution {
+			totalCreditPoints += -1 * transaction.NetAmount
+		}
 	}
 
 	// Get usage by tool from existing tasks
 	var toolUsage []struct {
-		TaskType string `json:"taskType"`
-		Count    int64  `json:"count"`
+		Type  string `json:"type"`
+		Count int64  `json:"count"`
 	}
 
 	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
@@ -308,11 +321,11 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 
 	// Convert to ToolUsage format with display names
 	usageByTool := make([]model.ToolUsage, len(toolUsage))
-	var mostUsedTool string
+	var mostUsedTool model.ToolUsage
 	var maxUsage int64
 
 	for i, usage := range toolUsage {
-		displayName := model.GetDisplayNameForTaskType(model.TaskType(usage.TaskType))
+		displayName := model.GetDisplayNameForTaskType(model.TaskType(usage.Type))
 		percentage := 0.0
 		if totalOperations > 0 {
 			percentage = float64(usage.Count) / float64(totalOperations) * 100
@@ -326,40 +339,79 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 
 		if usage.Count > maxUsage {
 			maxUsage = usage.Count
-			mostUsedTool = displayName
+			mostUsedTool = model.ToolUsage{
+				ToolName:   displayName,
+				UsageCount: int(usage.Count),
+				Percentage: percentage,
+			}
 		}
 	}
 
+	var recentTasks []model.Task
+	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+		Preload("TransactionHistory").
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Limit(10).
+		Find(&recentTasks).Error; err != nil {
+		return nil, err
+	}
+
 	// Get recent activity (last 7 days) from existing tasks
-	var recentActivity []struct {
+	var dailyTask []struct {
 		Date       string `json:"date"`
 		Operations int64  `json:"operations"`
 	}
 
-	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+	sevenDaysAgo := time.Now().AddDate(0, 0, -30)
 	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
 		Select("DATE(created_at) as date, COUNT(*) as operations").
 		Where("user_id = ? AND created_at >= ?", userID, sevenDaysAgo).
 		Group("DATE(created_at)").
 		Order("date DESC").
-		Scan(&recentActivity).Error; err != nil {
+		Scan(&dailyTask).Error; err != nil {
 		return nil, err
 	}
 
 	// Convert to DailyActivity format
-	dailyActivity := make([]model.DailyActivity, len(recentActivity))
-	for i, activity := range recentActivity {
+	dailyActivity := make([]model.DailyActivity, len(dailyTask))
+	for i, activity := range dailyTask {
 		dailyActivity[i] = model.DailyActivity{
 			Date:       activity.Date,
 			Operations: int(activity.Operations),
 		}
 	}
+	fmt.Printf("dailyActivity: %+v\n", dailyActivity)
 
 	return &model.UsageSummary{
-		TotalOperations: int(totalOperations),
-		PointsUsed:      totalPoints,
-		MostUsedTool:    mostUsedTool,
-		UsageByTool:     usageByTool,
-		RecentActivity:  dailyActivity,
+		TotalOperations:     int(totalOperations),
+		PointsUsed:          totalCreditPoints,
+		MostUsedTool:        mostUsedTool,
+		UsageByTool:         usageByTool,
+		DailyActivity:       dailyActivity,
+		RecentOperations:    recentTasks,
+		CurrentSubscription: userSubscription,
+	}, nil
+}
+
+func (t *userService) GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams validation.GetTasksQueryParams) (*PaginationResult[model.Task], error) {
+	var tasks []model.Task
+	fmt.Printf("userID: %+v\n", userID)
+	fmt.Printf("queryParams: %+v\n", queryParams)
+	query := t.DB.WithContext(c.Context()).Model(&model.Task{}).Where("user_id = ?", userID)
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		t.Log.Errorf("Failed to get tasks count: %+v", err)
+		return nil, err
+	}
+	offset := GetPaginationOffset(queryParams.Page, queryParams.PageSize)
+	query = query.Offset(offset).Limit(queryParams.PageSize)
+	if err := query.Preload("TransactionHistory").Find(&tasks).Error; err != nil {
+		t.Log.Errorf("Failed to get tasks: %+v", err)
+		return nil, err
+	}
+	return &PaginationResult[model.Task]{
+		Results: tasks,
+		Count:   count,
 	}, nil
 }
