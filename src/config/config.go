@@ -97,7 +97,7 @@ func init() {
 	ShopifyAPIKey = viper.GetString("SHOPIFY_API_KEY")
 	ShopifyAPISecret = viper.GetString("SHOPIFY_API_SECRET")
 	ShopifyAPPScopes = viper.GetString("SHOPIFY_APP_SCOPES")
-	RabbitMQConnectionUrl = "amqps://mygnmnap:v95K4k2yEyawSJ2l5r_QmeCaXv_f0Fop@possum.lmq.cloudamqp.com/mygnmnap"
+	RabbitMQConnectionUrl = viper.GetString("RABBITMQ_CONNECTION_URI")
 	GrpcServerPort = int32(viper.GetInt("GRPC_SERVER_PORT"))
 	WebhookAPIKey = viper.GetString("WEBHOOK_API_KEY")
 	S3AccessKey = viper.GetString("S3_ACCESS_KEY")
