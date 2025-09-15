@@ -16,10 +16,17 @@ func NewCloudinaryClient() *cloudinary.Cloudinary {
 	cld.Config.API.Timeout = 480       // 8 minutes for form-based uploads (including remote URL uploads)
 	cld.Config.API.UploadTimeout = 480 // 8 minutes for multipart uploads
 
-	// Create a custom HTTP client with longer timeouts
+	// Create a custom HTTP client with longer timeouts and no connection reuse
+	// to avoid context conflicts with fasthttp
 	customClient := &http.Client{
 		Timeout: 8 * time.Minute, // 8 minutes total timeout
 		Transport: &http.Transport{
+			DisableKeepAlives:     true, // Disable keep-alives to avoid context conflicts
+			DisableCompression:    false,
+			MaxIdleConns:          0,
+			MaxIdleConnsPerHost:   0,
+			MaxConnsPerHost:       0,
+			IdleConnTimeout:       0,
 			ResponseHeaderTimeout: 8 * time.Minute,
 			ExpectContinueTimeout: 30 * time.Second,
 		},

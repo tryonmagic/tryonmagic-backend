@@ -23,5 +23,9 @@ func FiberConfig() fiber.Config {
 		IdleTimeout:  15 * time.Minute, // Keep connections alive for 15 minutes
 		// Allow larger request bodies for image uploads
 		BodyLimit: 100 * 1024 * 1024, // 100MB max body size
+		// Disable connection reuse to avoid race conditions with fasthttp context
+		DisableKeepalive: false, // Keep this false for performance, but we handle race conditions in HTTP clients
+		// Reduce concurrent connections to minimize race conditions
+		Concurrency: 1024 * 256, // Default is 256 * 1024, reduce to 256 * 1024 for safety
 	}
 }

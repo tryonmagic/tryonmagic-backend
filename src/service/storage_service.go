@@ -53,7 +53,7 @@ func (s *storageService) SaveFile(c *fiber.Ctx, req *validation.SaveFile) (*mode
 		Mime:     req.Mime,
 		UserID:   user.ID,
 	}
-	if err := s.DB.WithContext(c.Context()).Create(file).Error; err != nil {
+	if err := s.DB.WithContext(context.Background()).Create(file).Error; err != nil {
 		s.Log.Errorf("Failed to save file: %+v", err)
 		return nil, err
 	}

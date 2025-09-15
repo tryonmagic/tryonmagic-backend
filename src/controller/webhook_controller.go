@@ -56,9 +56,14 @@ func (w *WebhookController) FashnAIVTonWebhook(c *fiber.Ctx) error {
 }
 
 func (w *WebhookController) CloudinaryWebhook(c *fiber.Ctx) error {
+	// Debug: Log all incoming webhook requests
+	fmt.Printf("🔔 WEBHOOK RECEIVED: %s %s\n", c.Method(), c.OriginalURL())
+	fmt.Printf("🔔 WEBHOOK HEADERS: %v\n", c.GetReqHeaders())
+	fmt.Printf("🔔 WEBHOOK BODY RAW: %s\n", string(c.Body()))
 
 	req := new(cloudinaryapi.CloudinaryResponse)
 	if err := c.BodyParser(req); err != nil {
+		fmt.Printf("🔔 WEBHOOK PARSE ERROR: %v\n", err)
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 	json, err := json.Marshal(req)

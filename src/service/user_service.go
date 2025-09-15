@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -52,7 +53,7 @@ func (s *userService) GetUsers(c *fiber.Ctx, params *validation.QueryUser) ([]mo
 	}
 
 	offset := (params.Page - 1) * params.Limit
-	query := s.DB.WithContext(c.Context()).Order("created_at asc")
+	query := s.DB.WithContext(context.Background()).Order("created_at asc")
 
 	if search := params.Search; search != "" {
 		query = query.Where("name LIKE ? OR email LIKE ? OR role LIKE ?",
@@ -77,7 +78,7 @@ func (s *userService) GetUsers(c *fiber.Ctx, params *validation.QueryUser) ([]mo
 func (s *userService) GetUserByID(c *fiber.Ctx, id string) (*model.User, error) {
 	user := new(model.User)
 
-	result := s.DB.WithContext(c.Context()).First(user, "id = ?", id)
+	result := s.DB.WithContext(context.Background()).First(user, "id = ?", id)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return nil, fiber.NewError(fiber.StatusNotFound, "User not found")
@@ -93,7 +94,7 @@ func (s *userService) GetUserByID(c *fiber.Ctx, id string) (*model.User, error) 
 func (s *userService) GetUserByEmail(c *fiber.Ctx, email string) (*model.User, error) {
 	user := new(model.User)
 
-	result := s.DB.WithContext(c.Context()).Where("email = ?", email).First(user)
+	result := s.DB.WithContext(context.Background()).Where("email = ?", email).First(user)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return nil, fiber.NewError(fiber.StatusNotFound, "User not found")
@@ -125,7 +126,7 @@ func (s *userService) CreateUser(c *fiber.Ctx, req *validation.CreateUser) (*mod
 		Role:      req.Role,
 	}
 
-	result := s.DB.WithContext(c.Context()).Create(user)
+	result := s.DB.WithContext(context.Background()).Create(user)
 
 	if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
 		return nil, fiber.NewError(fiber.StatusConflict, "Email is already in use")
@@ -162,7 +163,7 @@ func (s *userService) UpdateUser(c *fiber.Ctx, req *validation.UpdateUser, id st
 		Email:     req.Email,
 	}
 
-	result := s.DB.WithContext(c.Context()).Where("id = ?", id).Updates(updateBody)
+	result := s.DB.WithContext(context.Background()).Where("id = ?", id).Updates(updateBody)
 
 	if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
 		return nil, fiber.NewError(fiber.StatusConflict, "Email is already in use")
@@ -206,7 +207,7 @@ func (s *userService) UpdatePassOrVerify(c *fiber.Ctx, req *validation.UpdatePas
 		EmailVerified: req.EmailVerified,
 	}
 
-	result := s.DB.WithContext(c.Context()).Where("id = ?", id).Updates(updateBody)
+	result := s.DB.WithContext(context.Background()).Where("id = ?", id).Updates(updateBody)
 
 	if result.RowsAffected == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "User not found")
@@ -222,7 +223,7 @@ func (s *userService) UpdatePassOrVerify(c *fiber.Ctx, req *validation.UpdatePas
 func (s *userService) DeleteUser(c *fiber.Ctx, id string) error {
 	user := new(model.User)
 
-	result := s.DB.WithContext(c.Context()).Delete(user, "id = ?", id)
+	result := s.DB.WithContext(context.Background()).Delete(user, "id = ?", id)
 
 	if result.RowsAffected == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "User not found")
@@ -250,7 +251,7 @@ func (s *userService) CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin
 				EmailVerified: req.EmailVerified,
 			}
 
-			if createErr := s.DB.WithContext(c.Context()).Create(user).Error; createErr != nil {
+			if createErr := s.DB.WithContext(context.Background()).Create(user).Error; createErr != nil {
 				s.Log.Errorf("Failed to create user: %+v", createErr)
 				return nil, createErr
 			}
@@ -262,7 +263,7 @@ func (s *userService) CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin
 	}
 
 	userFromDB.EmailVerified = req.EmailVerified
-	if updateErr := s.DB.WithContext(c.Context()).Save(userFromDB).Error; updateErr != nil {
+	if updateErr := s.DB.WithContext(context.Background()).Save(userFromDB).Error; updateErr != nil {
 		s.Log.Errorf("Failed to update user: %+v", updateErr)
 		return nil, updateErr
 	}
@@ -273,14 +274,14 @@ func (s *userService) CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin
 func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.UsageSummary, error) {
 	// Get total operations and points from existing tasks
 	var totalOperations int64
-	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+	if err := t.DB.WithContext(context.Background()).Model(&model.Task{}).
 		Where("user_id = ?", userID).
 		Count(&totalOperations).Error; err != nil {
 		return nil, err
 	}
 
 	var transactionHistory []model.TransactionHistory
-	if err := t.DB.WithContext(c.Context()).Model(&model.TransactionHistory{}).
+	if err := t.DB.WithContext(context.Background()).Model(&model.TransactionHistory{}).
 		Select("task_id, transaction_type, transaction_status, net_amount").
 		Where("user_id = ?", userID).
 		Find(&transactionHistory).Error; err != nil {
@@ -289,7 +290,7 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 	}
 
 	var userSubscription model.UserSubscription
-	if err := t.DB.WithContext(c.Context()).Model(&model.Subscription{}).
+	if err := t.DB.WithContext(context.Background()).Model(&model.Subscription{}).
 		Select("points_balance, points_used,status,plan, points_total, monthly_points, last_reset_date, next_reset_date, expires_at").
 		Where("user_id = ?", userID).
 		First(&userSubscription).Error; err != nil {
@@ -310,7 +311,7 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 		Count int64  `json:"count"`
 	}
 
-	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+	if err := t.DB.WithContext(context.Background()).Model(&model.Task{}).
 		Select("type, COUNT(*) as count").
 		Where("user_id = ?", userID).
 		Group("type").
@@ -348,7 +349,7 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 	}
 
 	var recentTasks []model.Task
-	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+	if err := t.DB.WithContext(context.Background()).Model(&model.Task{}).
 		Preload("TransactionHistory").
 		Where("user_id = ?", userID).
 		Order("tasks.created_at DESC").
@@ -364,7 +365,7 @@ func (t *userService) GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.Us
 	}
 
 	sevenDaysAgo := time.Now().AddDate(0, 0, -30)
-	if err := t.DB.WithContext(c.Context()).Model(&model.Task{}).
+	if err := t.DB.WithContext(context.Background()).Model(&model.Task{}).
 		Select("DATE(created_at) as date, COUNT(*) as operations").
 		Where("user_id = ? AND created_at >= ?", userID, sevenDaysAgo).
 		Group("DATE(created_at)").
@@ -398,7 +399,7 @@ func (t *userService) GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams valid
 	var tasks []model.Task
 	fmt.Printf("userID: %+v\n", userID)
 	fmt.Printf("queryParams: %+v\n", queryParams)
-	query := t.DB.WithContext(c.Context()).Model(&model.Task{}).Where("user_id = ?", userID).Order("tasks.created_at DESC")
+	query := t.DB.WithContext(context.Background()).Model(&model.Task{}).Where("user_id = ?", userID).Order("tasks.created_at DESC")
 	var count int64
 	if err := query.Count(&count).Error; err != nil {
 		t.Log.Errorf("Failed to get tasks count: %+v", err)

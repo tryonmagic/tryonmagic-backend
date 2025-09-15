@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mbbipul/tryonmagic-backend/src/config"
+	s3ada "github.com/mbbipul/tryonmagic-backend/src/internal/adapter/s3"
 	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"github.com/mbbipul/tryonmagic-backend/src/pkg/downloader"
 	"github.com/mbbipul/tryonmagic-backend/src/validation"
@@ -74,7 +75,8 @@ func MapOutfitTypeToGarmentCategory(outfitType model.OutfitType) (GarmentCategor
 }
 
 type VirtualTryOnBase interface {
-	VirtualTryOn(ctx context.Context, modelImageURL, garmentImageURL string, category GarmentCategory) (string, error)
+	VirtualTryOn(ctx context.Context, taskId uuid.UUID, vtonTask validation.VTONTaskInput) (*FashnAIVtonResponseData, error)
+	PostProcessTask(taskObj *model.Task) error
 }
 
 type FashnAIVirtualTryOn struct {
@@ -91,6 +93,10 @@ func NewFashnAIVirtualTryOn(apiKey string, log *logrus.Logger) *FashnAIVirtualTr
 		Skip:         false,
 		Log:          log,
 	}
+}
+
+func (f *FashnAIVirtualTryOn) PostProcessTask(taskObj *model.Task) error {
+	return nil
 }
 
 func (f *FashnAIVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID, vtonTask validation.VTONTaskInput) (*FashnAIVtonResponseData, error) {
@@ -133,14 +139,33 @@ func (f *FashnAIVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID
 	jobUrl := f.FashnBaseURL + "/run"
 	webhook_url := config.WebhookBaseURL + "/fashnai-vton/" + config.WebhookAPIKey + "/" + taskId.String()
 	jobUrl += "?webhook_url=" + webhook_url
-	req, err := http.NewRequest("POST", jobUrl, bytes.NewBuffer(payloadBytes))
+
+	// Create a context with timeout to avoid hanging requests
+	reqCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, "POST", jobUrl, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+f.APIKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	// Create HTTP client with proper timeouts and no connection reuse
+	// to avoid context conflicts with fasthttp
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			DisableKeepAlives:     true,
+			DisableCompression:    false,
+			MaxIdleConns:          0,
+			MaxIdleConnsPerHost:   0,
+			MaxConnsPerHost:       0,
+			IdleConnTimeout:       0,
+			ResponseHeaderTimeout: 10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -166,13 +191,31 @@ func (f *FashnAIVirtualTryOn) GetImageFromSource(ctx context.Context, imageSourc
 }
 
 func (f *FashnAIVirtualTryOn) GetJobStatus(jobID string) (map[string]interface{}, error) {
-	req, err := http.NewRequest("GET", f.FashnBaseURL+"/status/"+jobID, nil)
+	// Create a context with timeout to avoid hanging requests
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", f.FashnBaseURL+"/status/"+jobID, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+f.APIKey)
 
-	client := &http.Client{}
+	// Create HTTP client with proper timeouts and no connection reuse
+	// to avoid context conflicts with fasthttp
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			DisableKeepAlives:     true,
+			DisableCompression:    false,
+			MaxIdleConns:          0,
+			MaxIdleConnsPerHost:   0,
+			MaxConnsPerHost:       0,
+			IdleConnTimeout:       0,
+			ResponseHeaderTimeout: 10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -222,4 +265,62 @@ func (f *FashnAIVirtualTryOn) GetTryOnImage(jobID string) (string, error) {
 	}
 
 	return "", errors.New("try-on processing took too long")
+}
+
+func GetVtonService(serviceType string) (VirtualTryOnBase, error) {
+	switch serviceType {
+	case "fashn":
+		return NewFashnAIVirtualTryOn(config.FASHN_AI_API_KEY, logrus.New()), nil
+	case "gemini":
+		return NewGeminiVirtualTryOn(logrus.New()), nil
+	default:
+		return nil, fmt.Errorf("invalid service type: %s", serviceType)
+	}
+}
+
+type GeminiVirtualTryOn struct {
+	Log *logrus.Logger
+}
+
+func NewGeminiVirtualTryOn(log *logrus.Logger) *GeminiVirtualTryOn {
+	return &GeminiVirtualTryOn{
+		Log: log,
+	}
+}
+
+func (f *GeminiVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID, vtonTask validation.VTONTaskInput) (*FashnAIVtonResponseData, error) {
+	// Create GenAI service instance
+	genaiService := NewGenAIVirtualTryOn(f.Log)
+
+	// Perform virtual try-on using GenAI
+	response, err := genaiService.VirtualTryOnWithGemini(ctx, taskId, vtonTask)
+	if err != nil {
+		f.Log.Errorf("Failed to perform GenAI virtual try-on: %v", err)
+		return nil, fmt.Errorf("failed to perform virtual try-on: %w", err)
+	}
+
+	key := string(model.TaskTypeVTon) + "/" + taskId.String() + ".png"
+
+	// Convert GenAI response to FashnAI response format
+	status := StatusCompleted
+	_, err = s3ada.UploadBytesToS3(ctx, response.ImageData, config.S3BucketName, key)
+	if err != nil {
+		f.Log.Errorf("Failed to upload image to S3: %v", err)
+		return nil, fmt.Errorf("failed to upload result image: %w", err)
+	}
+	output := []string{"s3://" + config.S3BucketName + "/" + key}
+
+	return &FashnAIVtonResponseData{
+		ID:     taskId.String(),
+		Status: &status,
+		Output: &output,
+		Error:  nil,
+	}, nil
+}
+
+func (f *GeminiVirtualTryOn) PostProcessTask(taskObj *model.Task) error {
+	taskObj.Status = model.TaskStatusSucceeded
+	now := time.Now()
+	taskObj.CompletedAt = &now
+	return nil
 }

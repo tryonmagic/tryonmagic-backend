@@ -79,6 +79,9 @@ func UploadImageToCloudinary(fileLocation string, destKey string, transformation
 		EagerNotificationURL: webhookUrl,
 	}
 
+	// Debug: Log the webhook URL being sent to Cloudinary
+	fmt.Printf("🔔 WEBHOOK DEBUG: Sending webhook URL to Cloudinary: %s\n", webhookUrl)
+
 	startTime := time.Now()
 	fmt.Printf("Cloudinary upload attempt started at: %v for key: %s\n", startTime, destKey)
 

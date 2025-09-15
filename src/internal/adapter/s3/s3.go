@@ -64,3 +64,19 @@ func UploadFileToS3(ctx context.Context, w *manager.WriteAtBuffer, bucket, key s
 	})
 
 }
+
+func UploadBytesToS3(ctx context.Context, data []byte, bucket, key string) (*manager.UploadOutput, error) {
+
+	// Create an S3 client using the existing GetS3Client function
+	client := GetS3Client()
+
+	// Create an uploader using the S3 client
+	uploader := manager.NewUploader(client)
+
+	return uploader.Upload(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+		Body:   bytes.NewReader(data),
+	})
+
+}

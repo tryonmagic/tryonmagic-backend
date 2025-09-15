@@ -211,7 +211,7 @@ func (t *taskService) createTask(c *fiber.Ctx, newTask any, taskType model.TaskT
 		UserID:    c.Locals("user").(*model.User).ID,
 	}
 
-	if err := t.DB.WithContext(c.Context()).Create(task).Error; err != nil {
+	if err := t.DB.WithContext(context.Background()).Create(task).Error; err != nil {
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (t *taskService) createTask(c *fiber.Ctx, newTask any, taskType model.TaskT
 		if err := t.SubscriptionService.DeductPoints(task.UserID, task.ID, requiredPoints, taskType); err != nil {
 			t.Log.Errorf("Failed to deduct points: %+v", err)
 			// Delete the task if point deduction fails
-			if deleteErr := t.DB.WithContext(c.Context()).Delete(task).Error; deleteErr != nil {
+			if deleteErr := t.DB.WithContext(context.Background()).Delete(task).Error; deleteErr != nil {
 				t.Log.Errorf("Failed to delete task after point deduction failure: %+v", deleteErr)
 			}
 			return nil, err
@@ -322,7 +322,7 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 		UserID:    c.Locals("user").(*model.User).ID,
 	}
 
-	if err := t.DB.WithContext(c.Context()).Create(task).Error; err != nil {
+	if err := t.DB.WithContext(context.Background()).Create(task).Error; err != nil {
 		t.Log.Errorf("Failed to create task: %+v", err)
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 		if err := t.SubscriptionService.DeductPoints(task.UserID, task.ID, requiredPoints, task.Type); err != nil {
 			t.Log.Errorf("Failed to deduct points: %+v", err)
 			// Delete the task if point deduction fails
-			if deleteErr := t.DB.WithContext(c.Context()).Delete(task).Error; deleteErr != nil {
+			if deleteErr := t.DB.WithContext(context.Background()).Delete(task).Error; deleteErr != nil {
 				t.Log.Errorf("Failed to delete task after point deduction failure: %+v", deleteErr)
 			}
 			return nil, err
@@ -341,11 +341,15 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 		t.Log.Infof("Deducted %d points for VTON task %s", requiredPoints, task.ID)
 	}
 
-	fashn := NewFashnAIVirtualTryOn(config.FASHN_AI_API_KEY, t.Log)
-	responseData, err := fashn.VirtualTryOn(c.Context(), task.ID, newTask.InputData)
+	vton, err := GetVtonService(config.VTON_SERVICE)
+	if err != nil {
+		t.Log.Errorf("Failed to get VTON service: %+v", err)
+		return nil, err
+	}
+	responseData, err := vton.VirtualTryOn(c.Context(), task.ID, newTask.InputData)
 	if err != nil {
 		t.Log.Errorf("VTON failed: %+v", err)
-		if err := t.DB.WithContext(c.Context()).Model(task).Where("id = ?", task.ID).Updates(model.Task{
+		if err := t.DB.WithContext(context.Background()).Model(task).Where("id = ?", task.ID).Updates(model.Task{
 			Status: model.TaskStatusFailed,
 		}).Error; err != nil {
 			t.Log.Errorf("Failed to update task status: %+v", err)
@@ -364,7 +368,7 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 
 	resultBytes, err := json.Marshal(resultMap)
 	if err != nil {
-		if err := t.DB.WithContext(c.Context()).Model(task).Where("id = ?", task.ID).Updates(model.Task{
+		if err := t.DB.WithContext(context.Background()).Model(task).Where("id = ?", task.ID).Updates(model.Task{
 			Status: model.TaskStatusFailed,
 		}).Error; err != nil {
 			t.Log.Errorf("Failed to update task status: %+v", err)
@@ -379,6 +383,11 @@ func (t *taskService) NewVTONTask(c *fiber.Ctx, newTask *validation.NewTask[vali
 	taskObj.ResultData = resultData
 	now := time.Now()
 	taskObj.StartedAt = &now
+
+	if err := vton.PostProcessTask(taskObj); err != nil {
+		t.Log.Errorf("Failed to post process task: %+v", err)
+		return nil, err
+	}
 
 	if err := t.DB.WithContext(context.Background()).Model(taskObj).Clauses(clause.Returning{}).Updates(taskObj).Error; err != nil {
 		fmt.Printf("Failed to update task: %+v", err)

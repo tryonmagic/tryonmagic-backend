@@ -58,6 +58,8 @@ var (
 	S3Endpoint                      string
 	WebhookBaseURL                  string
 	FASHN_AI_API_KEY                string
+	GEMINI_API_KEY                  string
+	VTON_SERVICE                    string
 )
 
 func init() {
@@ -107,6 +109,11 @@ func init() {
 	S3Endpoint = viper.GetString("S3_ENDPOINT")
 	WebhookBaseURL = viper.GetString("WEBHOOK_BASE_URL")
 	FASHN_AI_API_KEY = viper.GetString("FASHN_AI_API_KEY")
+	GEMINI_API_KEY = viper.GetString("GEMINI_API_KEY")
+	VTON_SERVICE = viper.GetString("VTON_SERVICE")
+	if VTON_SERVICE == "" {
+		VTON_SERVICE = "gemini"
+	}
 }
 
 func loadConfig() {

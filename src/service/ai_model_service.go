@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-playground/validator/v10"
@@ -47,7 +48,7 @@ func (s *aIModelService) CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) (*m
 		aiModel.AIModelAuthor = model.AIModelAuthorUser
 	}
 
-	err := s.DB.WithContext(c.Context()).Create(aiModel).Error
+	err := s.DB.WithContext(context.Background()).Create(aiModel).Error
 	if err != nil {
 		s.Log.Errorf("Failed to create AI model: %+v", err)
 		return nil, err
@@ -56,10 +57,10 @@ func (s *aIModelService) CreateAIModel(c *fiber.Ctx, aiModel *model.AIModel) (*m
 	newTask, err := s.createTask(aiModel, c)
 	if err != nil {
 		s.Log.Errorf("Failed to create task: %+v", err)
-		s.DB.WithContext(c.Context()).Delete(aiModel)
+		s.DB.WithContext(context.Background()).Delete(aiModel)
 		return nil, err
 	}
-	s.DB.WithContext(c.Context()).Model(aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
+	s.DB.WithContext(context.Background()).Model(aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
 	return newTask, nil
 }
 
@@ -82,7 +83,7 @@ func (s *aIModelService) createTask(aiModel *model.AIModel, c *fiber.Ctx) (*mode
 		return nil, err
 	}
 	s.Log.Infof("Task created successfully for %v, id: %v", newTask.Type, newTask.ID)
-	s.DB.WithContext(c.Context()).Model(aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
+	s.DB.WithContext(context.Background()).Model(aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
 	return newTask, nil
 }
 
@@ -90,7 +91,7 @@ func (s *aIModelService) BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIMod
 	if len(aiModels) == 0 {
 		return nil
 	}
-	err := s.DB.WithContext(c.Context()).Create(&aiModels).Error
+	err := s.DB.WithContext(context.Background()).Create(&aiModels).Error
 	if err != nil {
 		s.Log.Errorf("Failed to bulk create AI models: %+v", err)
 		return err
@@ -102,7 +103,7 @@ func (s *aIModelService) BulkCreateAIModels(c *fiber.Ctx, aiModels []model.AIMod
 			s.Log.Errorf("Failed to create task: %+v", err)
 			return err
 		}
-		s.DB.WithContext(c.Context()).Model(&aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
+		s.DB.WithContext(context.Background()).Model(&aiModel).Updates(model.AIModel{TaskID: &newTask.ID})
 	}
 	return nil
 }
@@ -117,7 +118,7 @@ func (s *aIModelService) GetAIModels(c *fiber.Ctx, queryParams *validation.BaseP
 	}
 
 	// Fix: Set the model before counting
-	db := s.DB.WithContext(c.Context()).Model(&model.AIModel{}).Where("user_id = ?", userId)
+	db := s.DB.WithContext(context.Background()).Model(&model.AIModel{}).Where("user_id = ?", userId)
 
 	var count int64
 	if err := db.Count(&count).Error; err != nil {
@@ -138,14 +139,14 @@ func (s *aIModelService) GetAIModels(c *fiber.Ctx, queryParams *validation.BaseP
 
 func (s *aIModelService) GetAIModelByID(c *fiber.Ctx, id string) (*model.AIModel, error) {
 	var aiModel model.AIModel
-	err := s.DB.WithContext(c.Context()).First(&aiModel, "id = ?", id).Error
+	err := s.DB.WithContext(context.Background()).First(&aiModel, "id = ?", id).Error
 	return &aiModel, err
 }
 
 func (s *aIModelService) UpdateAIModel(c *fiber.Ctx, aiModel *model.AIModel) error {
-	return s.DB.WithContext(c.Context()).Save(aiModel).Error
+	return s.DB.WithContext(context.Background()).Save(aiModel).Error
 }
 
 func (s *aIModelService) DeleteAIModel(c *fiber.Ctx, id string) error {
-	return s.DB.WithContext(c.Context()).Delete(&model.AIModel{}, "id = ?", id).Error
+	return s.DB.WithContext(context.Background()).Delete(&model.AIModel{}, "id = ?", id).Error
 }

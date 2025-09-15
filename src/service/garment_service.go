@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -39,7 +41,7 @@ func (s *garmentService) GetGarments(c *fiber.Ctx) ([]model.Garment, error) {
 	if userId == uuid.Nil {
 		return garments, nil
 	}
-	err := s.DB.WithContext(c.Context()).Find(&garments).Where(&model.Garment{UserID: &userId}).Order("created_at DESC").Error
+	err := s.DB.WithContext(context.Background()).Find(&garments).Where(&model.Garment{UserID: &userId}).Order("created_at DESC").Error
 	return garments, err
 }
 
@@ -58,7 +60,7 @@ func (s *garmentService) GetGarmentByID(c *fiber.Ctx, id string) (*model.Garment
 }
 
 func (s *garmentService) UpdateGarment(c *fiber.Ctx, garment *model.Garment) error {
-	return s.DB.WithContext(c.Context()).Save(garment).Error
+	return s.DB.WithContext(context.Background()).Save(garment).Error
 }
 
 func (s *garmentService) DeleteGarment(c *fiber.Ctx, id string) error {

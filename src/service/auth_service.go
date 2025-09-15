@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -68,7 +69,7 @@ func (s *authService) Register(c *fiber.Ctx, req *validation.Register) (*model.U
 		Role:      req.Role,
 	}
 
-	result := s.DB.WithContext(c.Context()).Create(user)
+	result := s.DB.WithContext(context.Background()).Create(user)
 	if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
 		return nil, fiber.NewError(fiber.StatusConflict, "Email already taken")
 	}
@@ -228,7 +229,7 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 	if !store {
 		shopifySession := new(model.ShopifySession)
 
-		result := s.DB.WithContext(c.Context()).Where("shop = ?", shop).Preload("User").First(shopifySession)
+		result := s.DB.WithContext(context.Background()).Where("shop = ?", shop).Preload("User").First(shopifySession)
 
 		if result.Error != nil {
 			s.Log.Errorf("Failed to get shopify session: %+v", result.Error)

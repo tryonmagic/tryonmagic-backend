@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/mbbipul/tryonmagic-backend/src/config"
@@ -68,7 +69,7 @@ func (s *tokenService) SaveToken(c *fiber.Ctx, token, userID, tokenType string, 
 		Expires: expires,
 	}
 
-	result := s.DB.WithContext(c.Context()).Create(tokenDoc)
+	result := s.DB.WithContext(context.Background()).Create(tokenDoc)
 
 	if result.Error != nil {
 		s.Log.Errorf("Failed save token: %+v", result.Error)
@@ -80,7 +81,7 @@ func (s *tokenService) SaveToken(c *fiber.Ctx, token, userID, tokenType string, 
 func (s *tokenService) DeleteToken(c *fiber.Ctx, tokenType string, userID string) error {
 	tokenDoc := new(model.Token)
 
-	result := s.DB.WithContext(c.Context()).
+	result := s.DB.WithContext(context.Background()).
 		Where("type = ? AND user_id = ?", tokenType, userID).
 		Delete(tokenDoc)
 
@@ -94,7 +95,7 @@ func (s *tokenService) DeleteToken(c *fiber.Ctx, tokenType string, userID string
 func (s *tokenService) DeleteAllToken(c *fiber.Ctx, userID string) error {
 	tokenDoc := new(model.Token)
 
-	result := s.DB.WithContext(c.Context()).Where("user_id = ?", userID).Delete(tokenDoc)
+	result := s.DB.WithContext(context.Background()).Where("user_id = ?", userID).Delete(tokenDoc)
 
 	if result.Error != nil {
 		s.Log.Errorf("Failed to delete all token: %+v", result.Error)
@@ -111,7 +112,7 @@ func (s *tokenService) GetTokenByUserID(c *fiber.Ctx, tokenStr string) (*model.T
 
 	tokenDoc := new(model.Token)
 
-	result := s.DB.WithContext(c.Context()).
+	result := s.DB.WithContext(context.Background()).
 		Where("token = ? AND user_id = ?", tokenStr, userID).
 		First(tokenDoc)
 
