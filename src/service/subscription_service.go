@@ -230,6 +230,19 @@ func (s *subscriptionService) PurchasePoints(userID uuid.UUID, points int, payme
 func (s *subscriptionService) PurchaseSubscription(userID uuid.UUID, paymentRequest validation.SubscriptionPurchaseRequest) error {
 	return s.DB.WithContext(context.Background()).Transaction(func(tx *gorm.DB) error {
 		var subscription model.Subscription
+		// Check if there are already 100 free subscriptions before allowing another
+		if paymentRequest.Plan == model.SubscriptionPlanFree {
+			var freeSubsCount int64
+			if err := tx.Model(&model.Subscription{}).
+				Where("plan = ?", model.SubscriptionPlanFree).
+				Count(&freeSubsCount).Error; err != nil {
+				return err
+			}
+			if freeSubsCount >= 100 {
+				return fiber.NewError(fiber.StatusForbidden, "The free limited time offer is no longer available. Currently, we gave the first 100 users a limited credit of 20 points to try our app. Soon, paid subscription plans will be published for more credit.")
+			}
+		}
+
 		if err := tx.Where("user_id = ?", userID).First(&subscription).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// User doesn't have a subscription, allow purchase

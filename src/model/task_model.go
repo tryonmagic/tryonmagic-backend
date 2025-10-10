@@ -108,13 +108,13 @@ func GetPointsForTaskType(taskType TaskType) int {
 	case TaskTypeUpscale:
 		return 1
 	case TaskTypeEnhance:
-		return 1
+		return 2
 	case TaskTypeExpandImage:
 		return 2
 	case TaskTypeEditImage:
-		return 1
+		return 2
 	case TaskTypeProductImageEdit:
-		return 1
+		return 3
 	case TaskTypeReplaceBackground:
 		return 1
 	case TaskTypeGenerateImage:
