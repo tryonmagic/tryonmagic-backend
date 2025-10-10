@@ -240,7 +240,7 @@ Output: Return ONLY the final edited image. Do not return text.`
 		return nil, fmt.Errorf("failed to generate content: %w", err)
 	}
 
-	g.Log.Info("Received response from GenAI model for try-on")
+	g.Log.Infof("Received response from GenAI model for try-on %v", result)
 
 	// Handle the API response
 	response, err := g.HandleAPIResponse(result, "virtual try-on")
