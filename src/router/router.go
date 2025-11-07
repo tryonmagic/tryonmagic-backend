@@ -24,6 +24,10 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	garmentService := service.NewGarmentService(db, validate)
 	webhookService := service.NewWebhookService(db, validate)
 
+	// GDPR and Installation services
+	gdprService := service.NewGDPRService(db)
+	installationService := service.NewAppInstallationService(db)
+
 	v1 := app.Group("/v1")
 
 	HealthCheckRoutes(v1, healthCheckService)
@@ -35,6 +39,10 @@ func Routes(app *fiber.App, db *gorm.DB) {
 	AIModelRoutes(v1, authService, userService, aiModelService, subscriptionService)
 	GarmentRoutes(v1, authService, userService, garmentService)
 	WebhookRoutes(v1, webhookService)
+
+	// GDPR and Installation routes
+	GDPRRoutes(v1, gdprService, validate)
+	InstallationRoutes(v1, installationService, validate)
 
 	if !config.IsProd {
 		DocsRoutes(v1)
