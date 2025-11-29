@@ -104,10 +104,7 @@ func (f *FashnAIVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID
 		return nil, fmt.Errorf("Virtual try-on skip not implemented")
 	}
 
-	category, err := MapOutfitTypeToGarmentCategory(vtonTask.OutfitType)
-	if err != nil {
-		return nil, err
-	}
+	// category, err := MapOutfitTypeToGarmentCategory(vtonTask.OutfitType)
 
 	garmentImageUrl, err := f.GetImageFromSource(ctx, vtonTask.GarmentImage)
 	fmt.Println("presigned Garment image URL:", garmentImageUrl)
@@ -123,12 +120,11 @@ func (f *FashnAIVirtualTryOn) VirtualTryOn(ctx context.Context, taskId uuid.UUID
 	}
 
 	payload := map[string]interface{}{
-		"model_image":   modelImageUrl,
-		"garment_image": garmentImageUrl,
-		"category":      category,
-		"num_samples":   vtonTask.NumSamples,
-		"seed":          vtonTask.Seed,
-		"mode":          vtonTask.ModelMode,
+		"model_name": "tryon-v1.6",
+		"inputs": map[string]interface{}{
+			"model_image":   modelImageUrl,
+			"garment_image": garmentImageUrl,
+		},
 	}
 
 	payloadBytes, err := json.Marshal(payload)
