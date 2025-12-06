@@ -228,10 +228,10 @@ Output: Return ONLY the final edited image. Do not return text.`
 
 	g.Log.Info("Sending model and garment images to the GenAI model...")
 
-	// Generate content using Gemini 2.5 Flash Image Preview
+	// Generate content using Gemini 3 Pro Image Preview
 	result, err := client.Models.GenerateContent(
 		ctx,
-		"gemini-2.5-flash-image-preview",
+		"gemini-3-pro-image-preview",
 		contents,
 		nil,
 	)
