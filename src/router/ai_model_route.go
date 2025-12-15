@@ -13,7 +13,7 @@ func AIModelRoutes(v1 fiber.Router, a service.AuthService, u service.UserService
 
 	aiModels := v1.Group("/ai-models")
 	aiModels.Use(m.Auth(a, u))
-	aiModels.Post("/", m.PointCheckMiddleware(s, model.TaskTypeGenerateAIModel), aiModelController.CreateAIModel)
+	aiModels.Post("/", m.PointCheckMiddleware(s, &model.Task{Type: model.TaskTypeGenerateAIModel}), aiModelController.CreateAIModel)
 	aiModels.Post("/bulk", aiModelController.BulkCreateAIModels)
 	aiModels.Get("/", aiModelController.GetAIModels)
 	aiModels.Get("/:id", aiModelController.GetAIModelByID)

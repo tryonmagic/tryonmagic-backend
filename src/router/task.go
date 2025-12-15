@@ -18,6 +18,6 @@ func TaskRoutes(
 	// Task creation with point checking
 	tasks.Use(m.Auth(a, u))
 	// taskCreation.Use(m.AdminBypassMiddleware()) // Allow admin bypass
-	tasks.Use(m.PointCheckMiddleware(s, ""))
+	tasks.Use(m.PointCheckMiddleware(s, nil))
 	tasks.Post("/new", taskController.NewTask)
 }

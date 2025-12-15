@@ -9,10 +9,11 @@ import (
 	"github.com/mbbipul/tryonmagic-backend/src/model"
 	"github.com/mbbipul/tryonmagic-backend/src/service"
 	"github.com/mbbipul/tryonmagic-backend/src/utils"
+	"gorm.io/datatypes"
 )
 
 // PointCheckMiddleware checks if user has enough points to perform a task
-func PointCheckMiddleware(subscriptionService service.SubscriptionService, taskType model.TaskType) fiber.Handler {
+func PointCheckMiddleware(subscriptionService service.SubscriptionService, taskTemplate *model.Task) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		utils.Log.Println(">>>>> PointCheckMiddleware entered")
 
@@ -33,20 +34,22 @@ func PointCheckMiddleware(subscriptionService service.SubscriptionService, taskT
 
 		utils.Log.Printf("Processing request for user: %s", user.ID)
 
-		// Use provided task type or extract from request
-		if taskType == "" {
+		task := taskTemplate
+
+		// Use provided task or extract from request
+		if task == nil {
 			var err error
-			taskType, err = getTaskTypeFromRequest(c)
+			task, err = getTaskFromRequest(c)
 			if err != nil {
-				utils.Log.Errorf("Failed to get task type: %v", err)
-				return fiber.NewError(fiber.StatusForbidden, "Invalid task type")
+				utils.Log.Errorf("Failed to get task: %v", err)
+				return fiber.NewError(fiber.StatusForbidden, "Invalid task")
 			}
 		}
 
-		utils.Log.Printf("Task type extracted: %s", taskType)
+		utils.Log.Printf("Task type extracted: %s", task.Type)
 
 		// Get required points for the task
-		requiredPoints := getPointsForTaskType(taskType)
+		requiredPoints := task.GetPointsForTaskType()
 		fmt.Println("middleware requiredPoints : ", requiredPoints)
 
 		// Check if user can perform the task
@@ -76,16 +79,16 @@ func PointCheckMiddleware(subscriptionService service.SubscriptionService, taskT
 
 		// Store required points in context for later use
 		c.Locals("requiredPoints", requiredPoints)
-		c.Locals("taskType", taskType)
+		c.Locals("taskType", task.Type)
 		fmt.Println("point check middleware : passed")
-		utils.Log.Printf("Point check middleware passed for user: %s, task: %s, points: %d", user.ID, taskType, requiredPoints)
+		utils.Log.Printf("Point check middleware passed for user: %s, task: %s, points: %d", user.ID, task.Type, requiredPoints)
 
 		return c.Next()
 	}
 }
 
-// getTaskTypeFromRequest extracts task type from request
-func getTaskTypeFromRequest(c *fiber.Ctx) (model.TaskType, error) {
+// getTaskFromRequest extracts task from request
+func getTaskFromRequest(c *fiber.Ctx) (*model.Task, error) {
 	// Try to get from request body first
 	body := c.Body()
 	if len(body) > 0 {
@@ -94,50 +97,29 @@ func getTaskTypeFromRequest(c *fiber.Ctx) (model.TaskType, error) {
 			if taskTypeStr, ok := requestBody["type"].(string); ok {
 				// Store the parsed body in context for reuse by controller
 				c.Locals("parsedBody", requestBody)
-				return model.TaskType(taskTypeStr), nil
+
+				task := &model.Task{Type: model.TaskType(taskTypeStr)}
+				if inputData, ok := requestBody["inputData"]; ok {
+					if inputBytes, err := json.Marshal(inputData); err == nil {
+						task.InputData = datatypes.JSON(inputBytes)
+					}
+				}
+				return task, nil
 			}
 		}
 	}
 
 	// Try to get from query params
 	if taskTypeStr := c.Query("type"); taskTypeStr != "" {
-		return model.TaskType(taskTypeStr), nil
+		return &model.Task{Type: model.TaskType(taskTypeStr)}, nil
 	}
 
 	// Try to get from headers
 	if taskTypeStr := c.Get("X-Task-Type"); taskTypeStr != "" {
-		return model.TaskType(taskTypeStr), nil
+		return &model.Task{Type: model.TaskType(taskTypeStr)}, nil
 	}
 
-	return "", errors.New("task type not found in request")
-}
-
-// getPointsForTaskType returns the points cost for each task type
-func getPointsForTaskType(taskType model.TaskType) int {
-	switch taskType {
-	case model.TaskTypeRemoveBackground:
-		return 1
-	case model.TaskTypeGenerateAIModel:
-		return 2
-	case model.TaskTypeVTon:
-		return 3
-	case model.TaskTypeUpscale:
-		return 1
-	case model.TaskTypeEnhance:
-		return 1
-	case model.TaskTypeExpandImage:
-		return 2
-	case model.TaskTypeEditImage:
-		return 1
-	case model.TaskTypeProductImageEdit:
-		return 1
-	case model.TaskTypeReplaceBackground:
-		return 1
-	case model.TaskTypeGenerateImage:
-		return 2
-	default:
-		return 1
-	}
+	return nil, errors.New("task type not found in request")
 }
 
 // AdminBypassMiddleware allows admins to bypass point checks (for testing/debugging)

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -94,33 +95,35 @@ func (task *Task) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (task *Task) GetPointsForTaskType() int {
-	return GetPointsForTaskType(task.Type)
-}
-
-func GetPointsForTaskType(taskType TaskType) int {
-	switch taskType {
+	switch task.Type {
 	case TaskTypeRemoveBackground:
 		return 1
 	case TaskTypeGenerateAIModel:
-		return 2
+		return 3
 	case TaskTypeVTon:
 		return 3
 	case TaskTypeUpscale:
-		return 1
+		return 2
 	case TaskTypeEnhance:
-		return 2
+		return 3
 	case TaskTypeExpandImage:
-		return 2
+		return 3
 	case TaskTypeEditImage:
 		return 2
 	case TaskTypeProductImageEdit:
 		return 3
 	case TaskTypeReplaceBackground:
+		var inputData map[string]any
+		if err := json.Unmarshal(task.InputData, &inputData); err == nil {
+			if val, ok := inputData["backgroundSourceType"].(string); ok && val == "PROMPT" {
+				return 3
+			}
+		}
 		return 1
 	case TaskTypeGenerateImage:
 		return 2
 	default:
-		return 1
+		return 3
 	}
 }
 

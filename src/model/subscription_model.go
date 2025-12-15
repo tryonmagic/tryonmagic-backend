@@ -107,13 +107,13 @@ func GetSubscriptionStatusDisplayName(status SubscriptionStatus) string {
 func GetSubscriptionPlanPoints(plan SubscriptionPlan) int {
 	switch plan {
 	case SubscriptionPlanFree:
-		return 20
+		return 10
 	case SubscriptionPlanBasic:
-		return 100
-	case SubscriptionPlanPro:
 		return 500
+	case SubscriptionPlanPro:
+		return 1600
 	case SubscriptionPlanEnterprise:
-		return 2000
+		return 5000
 	default:
 		return 0
 	}
