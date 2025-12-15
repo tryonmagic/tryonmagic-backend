@@ -63,7 +63,11 @@ func UploadImageToCloudinary(fileLocation string, destKey string, transformation
 
 	fmt.Printf("Starting Cloudinary upload for key: %s, transformation: %s\n", destKey, transformation)
 
-	cld := NewCloudinaryClient()
+	cld, err := NewCloudinaryClient()
+	if err != nil {
+		fmt.Printf("Error initializing Cloudinary client: %v\n", err)
+		return nil, fiber.NewError(fiber.StatusInternalServerError, "Failed to initialize image upload service")
+	}
 
 	// Debug: Log the configured timeouts
 	fmt.Printf("Cloudinary SDK Timeout: %d seconds, UploadTimeout: %d seconds\n",
@@ -103,7 +107,10 @@ func UploadImageToCloudinary(fileLocation string, destKey string, transformation
 }
 
 func TransformImage(key string, transformation string) (string, error) {
-	cld := NewCloudinaryClient()
+	cld, err := NewCloudinaryClient()
+	if err != nil {
+		return "", fmt.Errorf("failed to initialize Cloudinary client: %w", err)
+	}
 	image, err := cld.Image(key)
 	if err != nil {
 		fmt.Println("error")

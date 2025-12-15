@@ -101,7 +101,7 @@ func (task *Task) GetPointsForTaskType() int {
 	case TaskTypeGenerateAIModel:
 		return 3
 	case TaskTypeVTon:
-		return 3
+		return 4
 	case TaskTypeUpscale:
 		return 2
 	case TaskTypeEnhance:

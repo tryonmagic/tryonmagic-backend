@@ -1,15 +1,20 @@
 package cloudinaryapi
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/mbbipul/tryonmagic-backend/src/config"
 )
 
-func NewCloudinaryClient() *cloudinary.Cloudinary {
-	cld, _ := cloudinary.New()
+func NewCloudinaryClient() (*cloudinary.Cloudinary, error) {
+	cld, err := cloudinary.NewFromURL(config.CloudinaryURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Cloudinary client : %w", err)
+	}
 	cld.Config.URL.Secure = true
 	// Increase API timeouts to avoid the 60s default cancellation inside the SDK
 	// Values are in seconds
@@ -37,5 +42,5 @@ func NewCloudinaryClient() *cloudinary.Cloudinary {
 	uploaderAPI.Client = *customClient
 	cld.Upload = *uploaderAPI
 
-	return cld
+	return cld, nil
 }

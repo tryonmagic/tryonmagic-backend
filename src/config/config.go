@@ -60,6 +60,7 @@ var (
 	FASHN_AI_API_KEY                string
 	GEMINI_API_KEY                  string
 	VTON_SERVICE                    string
+	CloudinaryURL                   string
 )
 
 func init() {
@@ -114,6 +115,7 @@ func init() {
 	if VTON_SERVICE == "" {
 		VTON_SERVICE = "gemini"
 	}
+	CloudinaryURL = viper.GetString("CLOUDINARY_URL")
 }
 
 func loadConfig() {
