@@ -127,7 +127,22 @@ func (t *taskService) NewTask(c *fiber.Ctx, req any) (*model.Task, error) {
 			Type:      newTask.Type,
 			InputData: inputData,
 		})
-	case model.TaskTypeUpscale, model.TaskTypeEnhance:
+	case model.TaskTypeUpscale:
+		var inputData validation.UpscaleTaskInput
+		inputBytes, err := json.Marshal(newTask.InputData)
+		if err != nil {
+			t.Log.Errorf("Failed to marshal input data: %+v", err)
+			return nil, errors.New("invalid input data format")
+		}
+		if err := json.Unmarshal(inputBytes, &inputData); err != nil {
+			t.Log.Errorf("Failed to unmarshal input data into UpscaleTaskInput: %+v", err)
+			return nil, errors.New("invalid input data structure")
+		}
+		return t.NewVertexUpscaleTask(c, &validation.NewTask[validation.UpscaleTaskInput]{
+			Type:      newTask.Type,
+			InputData: inputData,
+		})
+	case model.TaskTypeEnhance:
 		var inputData validation.UpscaleTaskInput
 		inputBytes, err := json.Marshal(newTask.InputData)
 		if err != nil {
@@ -271,6 +286,10 @@ func (t *taskService) NewReplaceBackgroundTask(c *fiber.Ctx, newTask *validation
 
 func (t *taskService) NewGenerateAIModelTask(c *fiber.Ctx, newTask *validation.NewTask[validation.GenerateAIModelTaskInput]) (*model.Task, error) {
 	return t.createTask(c, newTask.InputData, model.TaskTypeGenerateAIModel, rabbitmq.GenerateAIModelTaskPublisher)
+}
+
+func (t *taskService) NewVertexUpscaleTask(c *fiber.Ctx, newTask *validation.NewTask[validation.UpscaleTaskInput]) (*model.Task, error) {
+	return t.createTask(c, newTask.InputData, model.TaskTypeUpscale, rabbitmq.UpscaleTaskPublisher)
 }
 
 func (t *taskService) NewUpscaleTask(c *fiber.Ctx, newTask *validation.NewTask[validation.UpscaleTaskInput]) (*model.Task, error) {
