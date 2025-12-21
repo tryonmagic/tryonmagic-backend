@@ -18,6 +18,7 @@ func SubscriptionRoutes(
 	subscription.Get("/status", subscriptionController.GetSubscriptionStatus)
 
 	subscription.Put("/plan", subscriptionController.UpdateSubscriptionPlan)
+	subscription.Post("/shopify/sync", subscriptionController.SyncShopifySubscription)
 
 	// Transaction history endpoints
 	subscription.Get("/transactions", subscriptionController.GetTransactionHistory)

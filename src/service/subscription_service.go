@@ -30,6 +30,7 @@ type SubscriptionService interface {
 	PurchaseSubscription(userID uuid.UUID, paymentRequest validation.SubscriptionPurchaseRequest) error
 	GetSubscriptionStatus(userID uuid.UUID) (*model.Subscription, error)
 	GetTransactionSummary(userID uuid.UUID) (map[string]interface{}, error)
+	SyncShopifySubscription(userID uuid.UUID, syncRequest validation.ShopifySyncRequest) (*model.Subscription, error)
 }
 
 type subscriptionService struct {

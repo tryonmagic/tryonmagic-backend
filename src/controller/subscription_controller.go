@@ -83,6 +83,50 @@ func (s *SubscriptionController) UpdateSubscriptionPlan(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Sync Shopify subscription
+// @Description Sync subscription data from Shopify
+// @Accept json
+// @Produce json
+// @Param request body validation.ShopifySyncRequest true "Shopify subscription sync data"
+// @Success 200 {object} response.GenericSuccessResponse
+// @Failure 400 {object} response.GenericErrorResponse
+// @Failure 401 {object} response.GenericErrorResponse
+// @Failure 500 {object} response.GenericErrorResponse
+// @Router /subscription/shopify/sync [post]
+func (s *SubscriptionController) SyncShopifySubscription(c *fiber.Ctx) error {
+	user := c.Locals("user").(*model.User)
+
+	var request validation.ShopifySyncRequest
+
+	if err := c.BodyParser(&request); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	// Validate the request
+	if request.ShopDomain == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Shop domain is required")
+	}
+
+	if request.Plan == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Subscription plan is required")
+	}
+
+	if request.Status == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Subscription status is required")
+	}
+
+	subscription, err := s.SubscriptionService.SyncShopifySubscription(user.ID, request)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to sync subscription: "+err.Error())
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.GenericSuccessResponse{
+		Message: "Shopify subscription synced successfully",
+		Code:    fiber.StatusOK,
+		Data:    subscription,
+	})
+}
+
 // @Summary Get transaction history
 // @Description Get user's comprehensive transaction history
 // @Accept json

@@ -78,7 +78,7 @@ func (s *userService) GetUsers(c *fiber.Ctx, params *validation.QueryUser) ([]mo
 func (s *userService) GetUserByID(c *fiber.Ctx, id string) (*model.User, error) {
 	user := new(model.User)
 
-	result := s.DB.WithContext(context.Background()).First(user, "id = ?", id)
+	result := s.DB.WithContext(context.Background()).Preload("Subscription").First(user, "id = ?", id)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return nil, fiber.NewError(fiber.StatusNotFound, "User not found")
