@@ -399,7 +399,26 @@ func (t *userService) GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams valid
 	var tasks []model.Task
 	fmt.Printf("userID: %+v\n", userID)
 	fmt.Printf("queryParams: %+v\n", queryParams)
-	query := t.DB.WithContext(context.Background()).Model(&model.Task{}).Where("user_id = ?", userID).Order("tasks.created_at DESC")
+	query := t.DB.WithContext(context.Background()).Model(&model.Task{}).Where("user_id = ?", userID)
+
+	if queryParams.TaskStatus != "" {
+		query = query.Where("status = ?", queryParams.TaskStatus)
+	}
+
+	if queryParams.TaskType != "" {
+		query = query.Where("type = ?", queryParams.TaskType)
+	}
+
+	if queryParams.DateFrom != nil && *queryParams.DateFrom != "" {
+		query = query.Where("created_at >= ?", *queryParams.DateFrom)
+	}
+
+	if queryParams.DateTo != nil && *queryParams.DateTo != "" {
+		query = query.Where("created_at <= ?", *queryParams.DateTo)
+	}
+
+	query = query.Order("tasks.created_at DESC")
+
 	var count int64
 	if err := query.Count(&count).Error; err != nil {
 		t.Log.Errorf("Failed to get tasks count: %+v", err)

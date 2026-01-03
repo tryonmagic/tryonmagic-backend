@@ -30,4 +30,8 @@ type QueryUser struct {
 
 type GetTasksQueryParams struct {
 	BasePaginationQueryParams
+	DateFrom   *string          `json:"dateFrom" example:"2025-01-01"`
+	DateTo     *string          `json:"dateTo" example:"2025-01-31"`
+	TaskStatus model.TaskStatus `json:"taskStatus" validate:"required,oneof=PENDING QUEUED PROCESSING SUCCEEDED FAILED" example:"PENDING"`
+	TaskType   model.TaskType   `json:"taskType" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE ENHANCE EXPAND_IMAGE EDIT_IMAGE PRODUCT_IMAGE_EDITING" example:"REMOVE_BACKGROUND"`
 }
