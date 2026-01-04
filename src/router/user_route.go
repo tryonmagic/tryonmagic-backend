@@ -16,6 +16,7 @@ func UserRoutes(v1 fiber.Router, a service.AuthService, u service.UserService, t
 	user.Get("/", m.Auth(a, u, "getUsers"), userController.GetUsers)
 	user.Get("/me", m.Auth(a, u, "getUsers"), userController.GetUserByID)
 	user.Get("/me/tasks", m.Auth(a, u), userController.GetTasks)
+	user.Post("/tasks/:taskId/audit", m.Auth(a, u), userController.AuditTask)
 	user.Post("/", m.Auth(a, u, "manageUsers"), userController.CreateUser)
 	user.Get("/:userId", m.Auth(a, u, "getUsers"), userController.GetUserByID)
 	user.Patch("/:userId", m.Auth(a, u, "manageUsers"), userController.UpdateUser)

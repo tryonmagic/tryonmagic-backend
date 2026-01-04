@@ -35,3 +35,8 @@ type GetTasksQueryParams struct {
 	TaskStatus model.TaskStatus `json:"taskStatus" validate:"required,oneof=PENDING QUEUED PROCESSING SUCCEEDED FAILED" example:"PENDING"`
 	TaskType   model.TaskType   `json:"taskType" validate:"required,oneof=REMOVE_BACKGROUND REPLACE_BACKGROUND GENERATE_AI_MODEL VTON UPSCALE ENHANCE EXPAND_IMAGE EDIT_IMAGE PRODUCT_IMAGE_EDITING" example:"REMOVE_BACKGROUND"`
 }
+
+type AuditTaskRequest struct {
+	Reason            string `json:"reason" validate:"required"`
+	IsRefundRequested bool   `json:"isRefundRequested"`
+}

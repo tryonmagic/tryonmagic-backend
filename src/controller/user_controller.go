@@ -257,3 +257,36 @@ func (u *UserController) GetTasks(c *fiber.Ctx) error {
 		},
 	})
 }
+
+// @Summary Audit a task
+// @Description Report an issue with a task and optionally request a refund
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param taskId path string true "Task ID"
+// @Param request body validation.AuditTaskRequest true "Audit request body"
+// @Success 200 {object} response.GenericSuccessResponse
+// @Security BearerAuth
+// @Router /users/tasks/{taskId}/audit [post]
+func (u *UserController) AuditTask(c *fiber.Ctx) error {
+	user := c.Locals("user").(*model.User)
+	taskIDStr := c.Params("taskId")
+	taskID, err := uuid.Parse(taskIDStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid task ID")
+	}
+
+	req := new(validation.AuditTaskRequest)
+	if err := c.BodyParser(req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := u.UserService.AuditTask(c, user.ID, taskID, req); err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.GenericSuccessResponse{
+		Code:    fiber.StatusOK,
+		Message: "Task audit reported successfully",
+	})
+}

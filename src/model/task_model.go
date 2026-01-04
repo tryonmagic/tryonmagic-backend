@@ -51,6 +51,7 @@ type Task struct {
 	UserID             uuid.UUID           `gorm:"not null" json:"userId"`
 	User               *User               `gorm:"foreignKey:UserID;references:ID" json:"user"`
 	TransactionHistory *TransactionHistory `gorm:"foreignKey:TaskID;references:ID" json:"transactionHistory"`
+	TaskAudit          *TaskAudit          `gorm:"foreignKey:TaskID" json:"taskAudit"`
 }
 
 type UserSubscription struct {

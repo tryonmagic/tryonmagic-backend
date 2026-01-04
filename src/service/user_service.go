@@ -28,6 +28,7 @@ type UserService interface {
 	CreateGoogleUser(c *fiber.Ctx, req *validation.GoogleLogin) (*model.User, error)
 	GetUsageHistory(c *fiber.Ctx, userID uuid.UUID) (*model.UsageSummary, error)
 	GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams validation.GetTasksQueryParams) (*PaginationResult[model.Task], error)
+	AuditTask(c *fiber.Ctx, userID uuid.UUID, taskID uuid.UUID, req *validation.AuditTaskRequest) error
 }
 
 type userService struct {
@@ -426,7 +427,7 @@ func (t *userService) GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams valid
 	}
 	offset := GetPaginationOffset(queryParams.Page, queryParams.PageSize)
 	query = query.Offset(offset).Limit(queryParams.PageSize)
-	if err := query.Preload("TransactionHistory").Find(&tasks).Error; err != nil {
+	if err := query.Preload("TransactionHistory").Preload("TaskAudit").Find(&tasks).Error; err != nil {
 		t.Log.Errorf("Failed to get tasks: %+v", err)
 		return nil, err
 	}
@@ -434,4 +435,39 @@ func (t *userService) GetTasks(c *fiber.Ctx, userID uuid.UUID, queryParams valid
 		Results: tasks,
 		Count:   count,
 	}, nil
+}
+
+func (s *userService) AuditTask(c *fiber.Ctx, userID uuid.UUID, taskID uuid.UUID, req *validation.AuditTaskRequest) error {
+	if err := s.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 1. Verify task exists and belongs to the user
+	var task model.Task
+	if err := s.DB.WithContext(context.Background()).Where("id = ? AND user_id = ?", taskID, userID).First(&task).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.NewError(fiber.StatusNotFound, "Task not found")
+		}
+		return err
+	}
+
+	// 2. Create TaskAudit record
+	audit := &model.TaskAudit{
+		TaskID:            taskID,
+		UserID:            userID,
+		Reason:            req.Reason,
+		IsRefundRequested: req.IsRefundRequested,
+		Status:            model.AuditStatusPending,
+	}
+
+	if err := s.DB.WithContext(context.Background()).Create(audit).Error; err != nil {
+		s.Log.Errorf("Failed to create task audit: %+v", err)
+		return err
+	}
+
+	// 3. Handle refund if requested (optional: auto-refund can be added here based on business rules)
+	// For now, we just log it and store it in the audit table.
+	// If the user specifically wants an auto-refund for certain conditions, we could add that logic.
+
+	return nil
 }
