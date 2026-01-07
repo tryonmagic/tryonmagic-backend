@@ -29,22 +29,24 @@ type AuthService interface {
 }
 
 type authService struct {
-	Log          *logrus.Logger
-	DB           *gorm.DB
-	Validate     *validator.Validate
-	UserService  UserService
-	TokenService TokenService
+	Log                 *logrus.Logger
+	DB                  *gorm.DB
+	Validate            *validator.Validate
+	UserService         UserService
+	TokenService        TokenService
+	SubscriptionService SubscriptionService
 }
 
 func NewAuthService(
-	db *gorm.DB, validate *validator.Validate, userService UserService, tokenService TokenService,
+	db *gorm.DB, validate *validator.Validate, userService UserService, tokenService TokenService, subscriptionService SubscriptionService,
 ) AuthService {
 	return &authService{
-		Log:          utils.Log,
-		DB:           db,
-		Validate:     validate,
-		UserService:  userService,
-		TokenService: tokenService,
+		Log:                 utils.Log,
+		DB:                  db,
+		Validate:            validate,
+		UserService:         userService,
+		TokenService:        tokenService,
+		SubscriptionService: subscriptionService,
 	}
 }
 
@@ -285,6 +287,7 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 			EmailVerified: sessionAssociatedUser.EmailVerified,
 		}
 
+		isNewUser := false
 		err = s.DB.Transaction(func(tx *gorm.DB) error {
 			// For Shopify users, use shop + shopify_user_id as unique identifier
 			// First try to find existing user by shop + shopify_user_id
@@ -303,12 +306,14 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 					return err
 				}
 				user = existingUser
+				isNewUser = false
 			} else if errors.Is(findResult.Error, gorm.ErrRecordNotFound) {
 				// User doesn't exist, create new one
 				if err := tx.Create(&user).Error; err != nil {
 					s.Log.Errorf("Failed to store user: %+v", err)
 					return err
 				}
+				isNewUser = true
 			} else {
 				s.Log.Errorf("Failed to find user: %+v", findResult.Error)
 				return findResult.Error
@@ -348,6 +353,18 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 			s.Log.Errorf("Failed to store shopify token: %+v", err)
 			return nil, err
 		}
+
+		// Automatically assign free subscription to new Shopify users
+		if isNewUser {
+			_, err := s.SubscriptionService.CreateOrUpdateSubscription(user.ID, model.SubscriptionPlanFree)
+			if err != nil {
+				s.Log.Errorf("Failed to create free subscription for new Shopify user: %+v", err)
+				// Don't fail the auth flow if subscription creation fails, just log it
+			} else {
+				s.Log.Infof("Successfully created free subscription for new Shopify user: %s", user.ID)
+			}
+		}
+
 		return &user, nil
 	}
 
