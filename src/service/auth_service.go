@@ -229,7 +229,8 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 	if !store {
 		shopifySession := new(model.ShopifySession)
 
-		result := s.DB.WithContext(context.Background()).Where("shop = ?", shop).Preload("User").First(shopifySession)
+		// Use session ID to find the specific session (session ID includes shop + shopify_user_id)
+		result := s.DB.WithContext(context.Background()).Where("id = ?", session.ID).Preload("User").First(shopifySession)
 
 		if result.Error != nil {
 			s.Log.Errorf("Failed to get shopify session: %+v", result.Error)
@@ -245,6 +246,9 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 			s.Log.Errorf("Failed hash password: %+v", err)
 			return nil, err
 		}
+		// Set shop and shopify_user_id to uniquely identify Shopify users
+		shop := session.Shop
+		shopifyUserID := sessionAssociatedUser.ID
 		user := model.User{
 			FirstName:     sessionAssociatedUser.FirstName,
 			LastName:      sessionAssociatedUser.LastName,
@@ -252,6 +256,8 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 			Role:          model.RoleAdmin,
 			EmailVerified: sessionAssociatedUser.EmailVerified,
 			Password:      hashedPassword,
+			Shop:          &shop,
+			ShopifyUserID: &shopifyUserID,
 		}
 		shopifySession := model.ShopifySession{
 			ID:          session.ID,
@@ -280,12 +286,32 @@ func (s *authService) ShopifyAuth(c *fiber.Ctx, payload *validation.ShopifyAuth,
 		}
 
 		err = s.DB.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Clauses(clause.Returning{}, clause.OnConflict{
-				Columns:   []clause.Column{{Name: "email"}},
-				DoUpdates: clause.AssignmentColumns([]string{"first_name", "last_name", "email", "email_verified", "updated_at"}),
-			}).Create(&user).Error; err != nil {
-				s.Log.Errorf("Failed to store user: %+v", err)
-				return err
+			// For Shopify users, use shop + shopify_user_id as unique identifier
+			// First try to find existing user by shop + shopify_user_id
+			var existingUser model.User
+			findResult := tx.Where("shop = ? AND shopify_user_id = ?", shop, shopifyUserID).First(&existingUser)
+
+			if findResult.Error == nil {
+				// User exists, update it
+				existingUser.FirstName = sessionAssociatedUser.FirstName
+				existingUser.LastName = sessionAssociatedUser.LastName
+				existingUser.Email = sessionAssociatedUser.Email
+				existingUser.EmailVerified = sessionAssociatedUser.EmailVerified
+				existingUser.Password = hashedPassword // Update password in case session ID changed
+				if err := tx.Save(&existingUser).Error; err != nil {
+					s.Log.Errorf("Failed to update user: %+v", err)
+					return err
+				}
+				user = existingUser
+			} else if errors.Is(findResult.Error, gorm.ErrRecordNotFound) {
+				// User doesn't exist, create new one
+				if err := tx.Create(&user).Error; err != nil {
+					s.Log.Errorf("Failed to store user: %+v", err)
+					return err
+				}
+			} else {
+				s.Log.Errorf("Failed to find user: %+v", findResult.Error)
+				return findResult.Error
 			}
 			s.Log.Infof("User ID: %s", user.ID)
 			shopifySession.UserID = user.ID
